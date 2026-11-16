@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard de Devoluções</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("tema")||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+  /* ===== CORES: troque aqui para ajustar a identidade visual ===== */
+  :root{
+    --marca:#E3A32A;  /* destaque (menu ativo, ícones)  */
+    --marca2:#3B82F6; /* azul das barras e linhas      */
+    --saud:#2E9E6B; --desc:#E05A55; --doado:#5B8DEF; --bloq:#F0AD4E; --sem:#94A3B8;
+    --verde-txt:#34D399; --verm-txt:#F87171;
+    --raio:16px;
+  }
+  :root[data-theme="dark"]{  /* grafite */
+    --bg:#121316; --side:#17181B; --card:#1D1F23; --card2:#24272C; --txt:#ECEDEF; --sub:#A1A5AD; --line:#2C2F35;
+    --campo:#191B1F; --borda:#363A41; --hover:#26292E; --grid:#2A2D33;
+    --hero:linear-gradient(120deg,#202328 0%,#2A2E35 55%,#353A43 100%); --hero-txt:#F2F3F5; --sombra:0 8px 24px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"]{
+    --bg:#EEF2F8; --side:#FFFFFF; --card:#FFFFFF; --card2:#F6F8FC; --txt:#14213D; --sub:#5B6B88; --line:#E1E7F0;
+    --campo:#FFFFFF; --borda:#D5DDEA; --hover:#F1F5FB; --grid:#E8EDF5;
+    --hero:linear-gradient(120deg,#1B3E7A 0%,#2D5FB5 60%,#3B82F6 100%); --hero-txt:#FFFFFF; --sombra:0 6px 18px rgba(20,33,61,.08);
+    --verde-txt:#15803D; --verm-txt:#C2413B;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);font-family:"Plus Jakarta Sans",Roboto,Arial,sans-serif;color:var(--txt);transition:background .3s,color .3s}
+  button{font:inherit;cursor:pointer}
+
+  /* ===== Layout ===== */
+  .app{display:grid;grid-template-columns:270px minmax(0,1fr);min-height:100vh}
+  aside{background:var(--side);border-right:1px solid var(--line);padding:22px 18px;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+  main{padding:22px 26px 40px;min-width:0}
+
+  /* ===== Sidebar ===== */
+  .brand{display:flex;align-items:center;gap:12px;padding:0 6px 18px;border-bottom:1px solid var(--line);margin-bottom:14px}
+  .brand-ic{width:46px;height:46px;border-radius:12px;background:var(--card2);border:1px solid var(--line);display:grid;place-items:center;overflow:hidden;flex:none}
+  .brand-ic img{max-width:38px;max-height:38px}
+  .brand-ic svg{width:24px;height:24px;color:var(--marca)}
+  .brand b{display:block;font-size:17px;letter-spacing:.06em;font-weight:800}
+  .brand small{color:var(--sub);font-size:12.5px}
+  nav{display:flex;flex-direction:column;gap:4px}
+  nav button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:1px solid transparent;color:var(--sub);padding:10px 12px;border-radius:12px;font-size:15px;font-weight:500;transition:background .2s,color .2s}
+  nav button svg{width:20px;height:20px;flex:none}
+  nav button:hover{background:var(--hover);color:var(--txt)}
+  nav button.on{background:color-mix(in srgb,var(--marca) 14%,transparent);color:var(--marca);border-color:color-mix(in srgb,var(--marca) 30%,transparent);box-shadow:inset 3px 0 0 var(--marca)}
+  .sec{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;margin:14px 6px 2px;padding-top:14px;border-top:1px solid var(--line)}
+  .sec svg{width:18px;height:18px}
+  .campo{padding:0 6px}
+  .campo label{display:block;font-size:12px;color:var(--sub);margin:10px 0 5px;font-weight:600}
+  .campo select,.campo input{width:100%;padding:8px 11px;border:1px solid var(--borda);border-radius:10px;background:var(--campo);color:var(--txt);font:inherit;font-size:14px;color-scheme:light dark}
+  .campo select:focus,.campo input:focus{outline:2px solid color-mix(in srgb,var(--marca2) 50%,transparent);outline-offset:1px}
+  .side-acoes{display:flex;gap:8px;padding:16px 6px 4px;margin-top:auto}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--borda);background:var(--campo);color:var(--txt);padding:9px 14px;border-radius:999px;font-size:13.5px;font-weight:600;transition:background .2s,transform .15s}
+  .btn:hover{background:var(--hover)} .btn:active{transform:scale(.97)}
+  .btn svg{width:16px;height:16px}
+  .side-acoes .btn{flex:1;white-space:nowrap}
+  .side-acoes #tema{flex:0 0 52px}
+
+  /* ===== Hero ===== */
+  .hero{background:var(--hero);color:var(--hero-txt);border-radius:22px;padding:24px 28px;display:flex;align-items:center;gap:22px;flex-wrap:wrap;position:relative;overflow:hidden;box-shadow:var(--sombra)}
+  .hero::after{content:"";position:absolute;right:-80px;top:-120px;width:420px;height:300px;border-radius:50%;background:rgba(255,255,255,.06)}
+  .hero h1{margin:0;font-size:26px;font-weight:800}
+  .hero p{margin:6px 0 0;opacity:.8;font-size:14.5px}
+  .hero .sp{flex:1}
+  .stamp{display:flex;align-items:center;gap:12px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.07);border-radius:14px;padding:10px 16px;position:relative;z-index:1}
+  .stamp svg{width:22px;height:22px;opacity:.9}
+  .stamp small{display:block;font-size:11.5px;opacity:.75}
+  .stamp b{font-size:15px}
+  .hero .btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.3);color:#fff;position:relative;z-index:1}
+  .hero .btn:hover{background:rgba(255,255,255,.16)}
+  .menu-btn{display:none}
+
+  /* ===== KPIs ===== */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:18px}
+  .k{background:var(--card);border:1px solid var(--line);border-radius:var(--raio);padding:16px;display:flex;gap:12px;box-shadow:var(--sombra);min-width:0}
+  .k>div:last-child{min-width:0}
+  .k .ic{width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--marca) 14%,transparent);color:var(--marca);display:grid;place-items:center;flex:none}
+  .k .ic svg{width:22px;height:22px}
+  .k .l{font-size:13px;color:var(--sub);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .k .v{font-size:31px;font-weight:800;line-height:1.15;margin-top:4px;font-variant-numeric:tabular-nums}
+  .k .v small{font-size:18px;font-weight:700}
+  .k .s{font-size:12.5px;color:var(--sub);margin-top:4px}
+  .pend{display:flex;align-items:center;gap:10px;margin-top:14px;background:color-mix(in srgb,var(--saud) 10%,var(--card));border:1px solid color-mix(in srgb,var(--saud) 45%,transparent);border-radius:14px;padding:12px 16px;font-size:14px}
+  .pend b{color:var(--verde-txt)}
+
+  /* ===== Gráficos ===== */
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+  .grid .full{grid-column:1/-1}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--raio);padding:20px 22px;min-width:0;box-shadow:var(--sombra)}
+  .card h3{font-size:17px;font-weight:700;margin:0}
+  .card .sub{font-size:13px;color:var(--sub);margin:4px 0 12px}
+  .ch{position:relative;height:340px} .ch.alto{height:480px}
+  .pag{display:none} .pag.on{display:block}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  th{position:sticky;top:0;background:var(--card2);font-weight:600;color:var(--sub)}
+  tr:hover td{background:var(--hover)}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  .tab{max-height:600px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+  .barra{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .barra .sp{flex:1}
+  .info2{font-size:12.5px;color:var(--sub)}
+  .msg{padding:60px;text-align:center;color:var(--sub)}
+  .erro{background:#3b1518;color:#ffb4ab;border:1px solid #7a2a2f;padding:16px;border-radius:12px;white-space:pre-wrap;margin-top:18px}
+
+  /* ===== Entrada suave ===== */
+  @keyframes surgir{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .anim{opacity:0;animation:surgir .6s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:var(--d,0s)}
+  @media (prefers-reduced-motion:reduce){.anim{animation:none;opacity:1}}
+
+  /* ===== Celular ===== */
+  .veu{display:none}
+  @media (max-width:960px){
+    .app{grid-template-columns:1fr}
+    aside{position:fixed;left:0;top:0;z-index:20;width:290px;transform:translateX(-105%);transition:transform .3s}
+    aside.aberto{transform:none;box-shadow:0 0 40px rgba(0,0,0,.4)}
+    .veu.on{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:15}
+    .menu-btn{display:inline-flex}
+    main{padding:16px}
+    .grid{grid-template-columns:1fr}
+    .hero{padding:20px} .hero h1{font-size:21px}
+    .ch.alto{height:540px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="side">
+    <div class="brand">
+      <div class="brand-ic">
+        <img src="logo.png" alt="" onerror="this.outerHTML='&lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;&lt;path d=&quot;M3 12a9 9 0 1 0 3-6.7L3 8&quot;/&gt;&lt;path d=&quot;M3 3v5h5&quot;/&gt;&lt;/svg&gt;'">
+      </div>
+      <div><b>LOGÍSTICA</b><small>Zebrands · devoluções</small></div>
+    </div>
+
+    <nav id="nav">
+      <button data-p="geral" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Visão geral</button>
+      <button data-p="motivos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/></svg>Motivos</button>
+      <button data-p="produtos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg>Produtos</button>
+      <button data-p="operacao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14a6 6 0 0 1 3.5 6"/></svg>Operação</button>
+      <button data-p="registros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Registros</button>
+    </nav>
+
+    <div class="sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"/></svg>Filtros</div>
+    <div class="campo">
+      <label for="fIni">Chegada de</label><input type="date" id="fIni">
+      <label for="fFim">até</label><input type="date" id="fFim">
+      <label for="fTransp">Transportadora</label><select id="fTransp"></select>
+      <label for="fDestino">Destino</label><select id="fDestino"></select>
+      <label for="fMotivo">Motivo</label><select id="fMotivo"></select>
+      <label for="fFamilia">Família</label><select id="fFamilia"></select>
+      <label for="fResp">Responsável</label><select id="fResp"></select>
+    </div>
+    <div class="side-acoes">
+      <button class="btn" id="limpar">Limpar filtros</button>
+      <button class="btn" id="tema" title="Alternar tema claro/escuro">🌙</button>
+    </div>
+  </aside>
+  <div class="veu" id="veu"></div>
+
+  <main>
+    <section class="hero anim">
+      <button class="btn menu-btn" id="menuBtn" aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div>
+        <h1 id="hTitulo">Devoluções</h1>
+        <p id="hSub">Registros do AppSheet · visão geral do período</p>
+      </div>
+      <div class="sp"></div>
+      <div class="stamp">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>
+        <div><small>Planilha lida em</small><b id="info">Carregando…</b></div>
+      </div>
+      <button class="btn" id="atualizar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Atualizar</button>
+    </section>
+
+    <div id="conteudo"><div class="msg">Carregando dados da planilha…</div></div>
+
+    <div id="paginas" style="display:none">
+      <div class="kpis">
+        <div class="k anim" style="--d:.08s"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></div><div><div class="l">Devoluções</div><div class="v" id="kReg">–</div><div class="s">registros no período</div></div></div>
+        <div class="k anim" style="--d:.14s"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg></div><div><div class="l">Unidades</div><div class="v" id="kUni">–</div><div class="s">itens devolvidos</div></div></div>
+        <div class="k anim" style="--d:.20s"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div><div class="l">Estoque saudável</div><div class="v" id="kSaud" style="color:var(--verde-txt)">–</div><div class="s" id="kSaudS">das unidades</div></div></div>
+        <div class="k anim" style="--d:.26s"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></div><div><div class="l">Descarte</div><div class="v" id="kDesc" style="color:var(--verm-txt)">–</div><div class="s" id="kDescS">das unidades</div></div></div>
+        <div class="k anim" style="--d:.32s"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><div class="l">Lead time mediano</div><div class="v" id="kLead">–</div><div class="s">chegada → internalização</div></div></div>
+      </div>
+      <div class="pend anim" style="--d:.38s" id="kPend"></div>
+
+      <section class="pag on" id="p-geral"><div class="grid">
+        <div class="card full anim" style="--d:.44s"><h3>Unidades devolvidas por mês e destino</h3><div class="sub">Quantidade por mês de chegada, separada pelo destino do estoque.</div><div class="ch"><canvas id="cMes"></canvas></div></div>
+        <div class="card anim" style="--d:.52s"><h3>Unidades por transportadora</h3><div class="sub">Quem mais trouxe devoluções no período.</div><div class="ch"><canvas id="cTransp"></canvas></div></div>
+        <div class="card anim" style="--d:.60s"><h3>Destino do estoque</h3><div class="sub">Participação de cada destino nas unidades.</div><div class="ch"><canvas id="cDestino"></canvas></div></div>
+      </div></section>
+
+      <section class="pag" id="p-motivos"><div class="grid">
+        <div class="card"><h3>Motivo da devolução</h3><div class="sub">Unidades por motivo informado.</div><div class="ch"><canvas id="cMotivo"></canvas></div></div>
+        <div class="card"><h3>Top 12 razões detalhadas</h3><div class="sub">Razões mais frequentes.</div><div class="ch"><canvas id="cRazao"></canvas></div></div>
+        <div class="card"><h3>Motivo do descarte</h3><div class="sub">Por que os itens foram descartados.</div><div class="ch"><canvas id="cDescarte"></canvas></div></div>
+        <div class="card"><h3>Retrabalho no estoque saudável</h3><div class="sub">Ação necessária para voltar ao estoque.</div><div class="ch"><canvas id="cRetrab"></canvas></div></div>
+      </div></section>
+
+      <section class="pag" id="p-produtos"><div class="grid">
+        <div class="card"><h3>Top 15 SKUs mais devolvidos</h3><div class="sub">Unidades por SKU e destino.</div><div class="ch alto"><canvas id="cSku"></canvas></div></div>
+        <div class="card"><h3>Devoluções por família</h3><div class="sub">Agrupado pelo prefixo do SKU.</div><div class="ch alto"><canvas id="cFamilia"></canvas></div></div>
+      </div></section>
+
+      <section class="pag" id="p-operacao"><div class="grid">
+        <div class="card"><h3>Registros por responsável</h3><div class="sub">Quantidade de registros lançados.</div><div class="ch alto"><canvas id="cResp"></canvas></div></div>
+        <div class="card"><h3>Lead time mediano por mês</h3><div class="sub">Dias entre a chegada e a internalização.</div><div class="ch alto"><canvas id="cLead"></canvas></div></div>
+      </div></section>
+
+      <section class="pag" id="p-registros"><div class="card" style="margin-top:16px">
+        <div class="barra"><h3>Registros</h3><span class="info2" id="tabInfo"></span><span class="sp"></span><button class="btn" id="csv">⬇ Baixar CSV</button></div>
+        <div class="tab"><table><thead><tr>
+          <th>Chegada</th><th>ID</th><th>NFe</th><th>SKU</th><th>Transportadora</th><th>Destino</th><th>Motivo</th><th>Razão</th><th>Responsável</th><th>Internalizada</th><th class="n">QTD</th><th class="n">Lead (dias)</th>
+        </tr></thead><tbody id="tbody"></tbody></table></div>
+      </div></section>
+    </div>
+  </main>
+</div>
+
+<script>
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let CORES = {};
+function lerCores(){ CORES = {"Saudável":css("--saud"),"Descarte":css("--desc"),"Doado":css("--doado"),"Bloqueado":css("--bloq"),"Sem destino":css("--sem")}; }
+const ORDEM_DESTINO = ["Saudável","Descarte","Sem destino","Doado","Bloqueado"];
+const MESES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const fmt = new Intl.NumberFormat("pt-BR");
+const fmt1 = new Intl.NumberFormat("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1});
+const $ = (id) => document.getElementById(id);
+let DADOS = [], graficos = {};
+
+Chart.defaults.locale = "pt-BR";
+Chart.defaults.font.family = "'Plus Jakarta Sans', Roboto, Arial, sans-serif";
+let primeira = true;
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+
+// Rótulos com os valores dentro das barras / fatias / pontos
+const Rotulos = { id:"rotulos", afterDatasetsDraw(chart){
+  const ctx = chart.ctx, tipo = chart.config.type, horiz = chart.options.indexAxis === "y";
+  const empilhado = !!(chart.options.scales && chart.options.scales.x && chart.options.scales.x.stacked);
+  ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  chart.data.datasets.forEach((ds, i) => {
+    const meta = chart.getDatasetMeta(i); if (meta.hidden) return;
+    const total = ds.data.reduce((a, b) => a + (b || 0), 0);
+    meta.data.forEach((el, j) => {
+      const v = ds.data[j]; if (v === null || v === undefined || v === 0) return;
+      if (tipo === "doughnut") {
+        if (v / total < 0.03) return;
+        const pt = el.tooltipPosition(); ctx.font = "600 13px Roboto, Arial, sans-serif"; ctx.fillStyle = "#fff";
+        ctx.fillText(fmt1.format(v / total * 100) + "%", pt.x, pt.y); return;
+      }
+      if (tipo === "line") { ctx.font = "500 11px Roboto, Arial, sans-serif"; ctx.fillStyle = css("--txt"); ctx.fillText(fmt1.format(v), el.x, el.y - 13); return; }
+      const txt = fmt.format(v); ctx.font = "500 11px Roboto, Arial, sans-serif";
+      const larg = ctx.measureText(txt).width;
+      if (empilhado) {
+        const tam = horiz ? Math.abs(el.x - el.base) : Math.abs(el.base - el.y);
+        const esp = horiz ? el.height : el.width;
+        if (tam < (horiz ? larg + 6 : 15) || esp < 12 || (!horiz && esp < larg + 2)) return;
+        ctx.fillStyle = "#fff";
+        ctx.fillText(txt, horiz ? (el.x + el.base) / 2 : el.x, horiz ? el.y : (el.y + el.base) / 2);
+      } else {
+        ctx.fillStyle = css("--txt");
+        if (horiz) { ctx.textAlign = "left"; ctx.fillText(txt, el.x + 5, el.y); ctx.textAlign = "center"; }
+        else ctx.fillText(txt, el.x, el.y - 9);
+      }
+    });
+  });
+  ctx.restore();
+}};
+Chart.register(Rotulos);
+
+const dt = (s) => s ? new Date(s) : null;
+const dataBR = (s) => s ? s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4)+" "+s.slice(11,16) : "";
+const mesChave = (s) => s.slice(0,7);
+const mesRot = (k) => MESES[+k.slice(5,7)-1]+"/"+k.slice(2,4);
+const mediana = (a) => { if(!a.length) return null; const b=[...a].sort((x,y)=>x-y), m=b.length>>1; return b.length%2?b[m]:(b[m-1]+b[m])/2; };
+const lead = (r) => { if(!r.internalizada) return null; const d=(dt(r.internalizada)-dt(r.chegada))/86400000; return d>=0?d:null; };
+
+function soma(rows, chave, filtro){ const m=new Map(); for(const r of rows){ if(filtro && !filtro(r)) continue; const k=r[chave]; if(!k) continue; m.set(k,(m.get(k)||0)+r.qtd);} return m; }
+const topN = (m,n) => [...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n);
+
+function preencherSelect(el, valores){
+  const atual = el.value;
+  el.innerHTML = '<option value="">Todos</option>' + valores.map(v=>`<option>${v.replace(/</g,"&lt;")}</option>`).join("");
+  if (valores.includes(atual)) el.value = atual;
+}
+
+function montarFiltros(){
+  const uniq = (k) => [...new Set(DADOS.map(r=>r[k]))].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  preencherSelect($("fTransp"), uniq("transportadora"));
+  preencherSelect($("fDestino"), uniq("destino"));
+  preencherSelect($("fMotivo"), uniq("motivo"));
+  preencherSelect($("fFamilia"), uniq("familia"));
+  preencherSelect($("fResp"), uniq("responsavel"));
+  const datas = DADOS.map(r=>r.chegada).sort();
+  if (!$("fIni").value) $("fIni").value = datas[0].slice(0,10);
+  if (!$("fFim").value) $("fFim").value = datas[datas.length-1].slice(0,10);
+}
+
+function filtrados(){
+  const ini=$("fIni").value, fim=$("fFim").value;
+  const f = {transportadora:$("fTransp").value, destino:$("fDestino").value, motivo:$("fMotivo").value, familia:$("fFamilia").value, responsavel:$("fResp").value};
+  return DADOS.filter(r => (!ini || r.chegada.slice(0,10)>=ini) && (!fim || r.chegada.slice(0,10)<=fim) &&
+    Object.entries(f).every(([k,v]) => !v || r[k]===v));
+}
+
+function grafico(id, cfg){
+  if (graficos[id]) graficos[id].destroy();
+  cfg.options = Object.assign({responsive:true, maintainAspectRatio:false, animation:{duration: primeira ? 1100 : 350, easing:"easeOutQuart"}}, cfg.options||{});
+  graficos[id] = new Chart($(id), cfg);
+}
+function barrasH(id, pares, cor){
+  grafico(id,{type:"bar",data:{labels:pares.map(p=>p[0]),datasets:[{label:"Unidades",data:pares.map(p=>p[1]),backgroundColor:cor||css("--marca2"),borderRadius:4}]},
+    options:{indexAxis:"y",layout:{padding:{right:44}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+fmt.format(c.raw)}}},scales:{x:{grid:{color:css("--grid")}},y:{grid:{display:false},ticks:{autoSkip:false}}}}});
+}
+function empilhado(id, rows, chave, rotulos, horizontal){
+  const destinos = ORDEM_DESTINO.filter(d => rows.some(r=>r.destino===d));
+  const ds = destinos.map(d => ({label:d, backgroundColor:CORES[d]||"#bbb",
+    data: rotulos.map(l => rows.reduce((s,r)=> s + (r[chave]===l && r.destino===d ? r.qtd : 0), 0))}));
+  grafico(id,{type:"bar",data:{labels: chave==="mes"?rotulos.map(mesRot):rotulos, datasets:ds},
+    options:{indexAxis:horizontal?"y":"x",datasets:{bar:{borderRadius:2}},plugins:{legend:{position:"top"},tooltip:{mode:"index",callbacks:{label:c=>` ${c.dataset.label}: ${fmt.format(c.raw)}`}}},
+      scales:{x:{stacked:true,grid:{color:horizontal?css("--grid"):"transparent"}},y:{stacked:true,grid:{color:horizontal?"transparent":css("--grid")},ticks:{autoSkip:false}}}}});
+}
+
+function render(){
+  const rows = filtrados().map(r => Object.assign(r,{mes:mesChave(r.chegada)}));
+  const uni = rows.reduce((s,r)=>s+r.qtd,0);
+  const saud = rows.reduce((s,r)=>s+(r.destino==="Saudável"?r.qtd:0),0);
+  const desc = rows.reduce((s,r)=>s+(r.destino==="Descarte"?r.qtd:0),0);
+  const leads = rows.map(lead).filter(v=>v!==null);
+  const med = mediana(leads);
+  contar("kReg", rows.length, v => fmt.format(Math.round(v)));
+  contar("kUni", uni, v => fmt.format(Math.round(v)));
+  contar("kSaud", uni ? saud/uni*100 : null, v => fmt1.format(v)+"<small>%</small>");
+  contar("kDesc", uni ? desc/uni*100 : null, v => fmt1.format(v)+"<small>%</small>");
+  contar("kLead", med, v => fmt1.format(v)+"<small> dias</small>");
+  $("kSaudS").textContent = fmt.format(saud) + " de " + fmt.format(uni) + " unidades";
+  $("kDescS").textContent = fmt.format(desc) + " de " + fmt.format(uni) + " unidades";
+  const pend = rows.filter(r=>!r.internalizada).length;
+  $("kPend").innerHTML = `⏳ <span><b>${fmt.format(pend)}</b> registros ainda sem data de internalização (${fmt1.format(rows.length? pend/rows.length*100:0)}% do período)</span>`;
+
+  const meses = [...new Set(rows.map(r=>r.mes))].sort();
+  empilhado("cMes", rows, "mes", meses, false);
+  barrasH("cTransp", topN(soma(rows,"transportadora"),12));
+  const dest = soma(rows,"destino"); const dl = ORDEM_DESTINO.filter(d=>dest.has(d));
+  grafico("cDestino",{type:"doughnut",data:{labels:dl,datasets:[{data:dl.map(d=>dest.get(d)),backgroundColor:dl.map(d=>CORES[d]),borderWidth:2,borderColor:css("--card")}]},
+    options:{cutout:"62%",plugins:{legend:{position:"right"},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt.format(c.raw)} (${fmt1.format(c.raw/uni*100)}%)`}}}}});
+
+  barrasH("cMotivo", topN(soma(rows,"motivo"),12));
+  barrasH("cRazao", topN(soma(rows,"razao"),12));
+  barrasH("cDescarte", topN(soma(rows,"descarte"),10), CORES["Descarte"]);
+  barrasH("cRetrab", topN(soma(rows,"retrabalho"),10), CORES["Saudável"]);
+
+  empilhado("cSku", rows, "item", topN(soma(rows,"item"),15).map(p=>p[0]), true);
+  empilhado("cFamilia", rows, "familia", topN(soma(rows,"familia"),12).map(p=>p[0]), false);
+
+  const resp = new Map(); rows.forEach(r=>resp.set(r.responsavel,(resp.get(r.responsavel)||0)+1));
+  const rp = topN(resp,20);
+  grafico("cResp",{type:"bar",data:{labels:rp.map(p=>p[0]),datasets:[{label:"Registros",data:rp.map(p=>p[1]),backgroundColor:css("--marca2"),borderRadius:4}]},
+    options:{indexAxis:"y",layout:{padding:{right:36}},plugins:{legend:{display:false}},scales:{y:{ticks:{autoSkip:false},grid:{display:false}},x:{grid:{color:css("--grid")}}}}});
+  const lm = meses.map(m => mediana(rows.filter(r=>r.mes===m).map(lead).filter(v=>v!==null)));
+  grafico("cLead",{type:"line",data:{labels:meses.map(mesRot),datasets:[{label:"Dias (mediana)",data:lm,borderColor:css("--marca2"),backgroundColor:css("--marca2")+"22",fill:true,tension:.25,pointRadius:4}]},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+(c.raw===null?"–":fmt1.format(c.raw)+" dias")}}},scales:{y:{beginAtZero:true,grid:{color:css("--grid")}},x:{grid:{display:false}}}}});
+
+  const ord = [...rows].sort((a,b)=>b.chegada.localeCompare(a.chegada));
+  const LIM = 500;
+  $("tabInfo").textContent = ord.length > LIM ? `mostrando os ${LIM} mais recentes de ${fmt.format(ord.length)} (o CSV traz todos)` : `${fmt.format(ord.length)} registros`;
+  const esc = (s) => String(s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  $("tbody").innerHTML = ord.slice(0,LIM).map(r => { const l=lead(r); return `<tr><td>${dataBR(r.chegada)}</td><td>${esc(r.id)}</td><td>${esc(r.nfe)}</td><td>${esc(r.item)}</td><td>${esc(r.transportadora)}</td><td>${esc(r.destino)}</td><td>${esc(r.motivo)}</td><td>${esc(r.razao)}</td><td>${esc(r.responsavel)}</td><td>${dataBR(r.internalizada)}</td><td class="n">${fmt.format(r.qtd)}</td><td class="n">${l===null?"":fmt1.format(l)}</td></tr>`; }).join("");
+  window._linhas = ord;
+}
+
+function contar(id, alvo, f){
+  const el = $(id);
+  if (alvo === null || alvo === undefined) { el.textContent = "–"; return; }
+  if (!primeira || matchMedia("(prefers-reduced-motion: reduce)").matches) { el.innerHTML = f(alvo); return; }
+  const t0 = performance.now(), dur = 1100;
+  (function passo(t){ const p = Math.min(1,(t-t0)/dur), e = 1-Math.pow(1-p,3); el.innerHTML = f(alvo*e); if (p<1) requestAnimationFrame(passo); })(t0);
+}
+
+function baixarCSV(){
+  const cab = ["Chegada","ID","NFe","SKU","Família","Transportadora","Destino","Motivo","Razão","Motivo descarte","Retrabalho","Responsável","Internalizada","QTD","Lead (dias)"];
+  const q = (v) => `"${String(v??"").replace(/"/g,'""')}"`;
+  const linhas = (window._linhas||[]).map(r => { const l=lead(r); return [dataBR(r.chegada),r.id,r.nfe,r.item,r.familia,r.transportadora,r.destino,r.motivo,r.razao,r.descarte,r.retrabalho,r.responsavel,dataBR(r.internalizada),String(r.qtd).replace(".",","),l===null?"":fmt1.format(l)].map(q).join(";"); });
+  const blob = new Blob(["﻿"+[cab.map(q).join(";"),...linhas].join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "devolucoes_filtradas.csv"; a.click();
+}
+
+async function carregar(forcar){
+  $("info").textContent = "Carregando…";
+  try{
+    const r = await fetch("/api/dados" + (forcar ? "?t="+Date.now() : ""));
+    const j = await r.json();
+    if (!r.ok || j.erro) throw new Error(j.erro || ("HTTP "+r.status));
+    DADOS = j.registros;
+    if (!DADOS.length) throw new Error("A planilha não retornou registros.");
+    $("conteudo").style.display = "none"; $("paginas").style.display = "block";
+    montarFiltros(); render(); primeira = false;
+    const d = new Date(j.atualizadoEm);
+    $("info").textContent = d.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
+  }catch(e){
+    $("info").textContent = "erro ao carregar";
+    $("conteudo").innerHTML = `<div class="erro">Não consegui carregar os dados.\n\n${String(e.message||e)}</div>`;
+  }
+}
+
+const TITULOS = {geral:["Devoluções","Registros do AppSheet · visão geral do período"], motivos:["Motivos","Por que os produtos voltaram e para onde foram"],
+  produtos:["Produtos","SKUs e famílias com mais devoluções"], operacao:["Operação","Produtividade da equipe e tempo de internalização"], registros:["Registros","Lista completa com exportação para CSV"]};
+function menu(abrir){ if(abrir) $("side").scrollTop = 0; $("side").classList.toggle("aberto",abrir); $("veu").classList.toggle("on",abrir); }
+$("menuBtn").onclick = () => menu(true); $("veu").onclick = () => menu(false);
+document.querySelectorAll("nav button[data-p]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button[data-p]").forEach(x=>x.classList.toggle("on",x===b));
+  $("hTitulo").textContent = TITULOS[b.dataset.p][0]; $("hSub").textContent = TITULOS[b.dataset.p][1]; menu(false);
+  const pg = $("p-"+b.dataset.p); pg.querySelectorAll(".card").forEach((c,i)=>{ c.classList.remove("anim"); void c.offsetWidth; c.style.setProperty("--d",(i*0.06)+"s"); c.classList.add("anim"); });
+  document.querySelectorAll(".pag").forEach(p=>p.classList.toggle("on",p.id==="p-"+b.dataset.p));
+  Object.values(graficos).forEach(g=>g.resize());
+});
+["fIni","fFim","fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id => $(id).onchange = render);
+$("limpar").onclick = () => { ["fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id=>$(id).value=""); $("fIni").value=""; $("fFim").value=""; montarFiltros(); render(); };
+$("csv").onclick = baixarCSV;
+$("atualizar").onclick = () => carregar(true);
+function temaEscuro(){ const t = document.documentElement.dataset.theme; return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; }
+function aplicarTema(){
+  $("tema").textContent = temaEscuro() ? "☀️" : "🌙";
+  Chart.defaults.color = css("--sub"); Chart.defaults.borderColor = css("--grid");
+  lerCores(); if (DADOS.length) render();
+}
+$("tema").onclick = () => {
+  const novo = temaEscuro() ? "light" : "dark"; document.documentElement.dataset.theme = novo;
+  try { localStorage.setItem("tema", novo); } catch (e) {}
+  aplicarTema();
+};
+aplicarTema();
+carregar(false);
+</script>
+</body>
+</html>
