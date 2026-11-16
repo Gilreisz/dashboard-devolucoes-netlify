@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard de Devoluções</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+  :root{--bg:#f1f3f4;--card:#fff;--txt:#202124;--sub:#5f6368;--line:#e3e5e8;--azul:#4285F4;
+        --saud:#2E9E6B;--desc:#D9534F;--doado:#5B8DEF;--bloq:#F0AD4E;--sem:#9AA0A6}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font-family:Roboto,Arial,sans-serif;color:var(--txt)}
+  header{background:#fff;border-bottom:1px solid #dadce0;padding:14px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+  header h1{font-size:19px;font-weight:500;margin:0}
+  .logo{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#2E9E6B,#4285F4)}
+  .sp{flex:1}
+  .info{font-size:12px;color:var(--sub)}
+  button{font:inherit;border:1px solid #dadce0;background:#fff;border-radius:6px;padding:7px 12px;cursor:pointer;color:#1a73e8;font-size:13px}
+  button:hover{background:#f8f9fa}
+  .wrap{max-width:1240px;margin:0 auto;padding:16px}
+  .filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;background:#fff;padding:12px;border-radius:10px;border:1px solid var(--line)}
+  .filtros label{font-size:11px;color:var(--sub);display:block;margin-bottom:3px}
+  .filtros select,.filtros input{width:100%;padding:7px 8px;border:1px solid #dadce0;border-radius:6px;font:inherit;font-size:13px;background:#fff;color:var(--txt)}
+  nav{display:flex;gap:6px;margin:16px 0 12px;overflow-x:auto}
+  nav button{color:var(--sub);border-radius:20px;white-space:nowrap}
+  nav button.on{background:#e8f0fe;color:#1967d2;border-color:#d2e3fc;font-weight:500}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+  .k{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .k .l{font-size:12px;color:var(--sub)} .k .v{font-size:28px;margin-top:6px;font-variant-numeric:tabular-nums}
+  .pend{font-size:12px;color:var(--sub);margin:8px 2px 0}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+  .grid .full{grid-column:1/-1}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+  .card h3{font-size:14px;font-weight:500;margin:0 0 10px}
+  .ch{position:relative;height:300px} .ch.alto{height:460px}
+  .pag{display:none} .pag.on{display:block}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  th{position:sticky;top:0;background:#f8f9fa;font-weight:500;color:var(--sub)}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  .tab{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+  .barra{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .msg{padding:40px;text-align:center;color:var(--sub)}
+  .erro{background:#fce8e6;color:#a50e0e;border:1px solid #f6c7c3;padding:14px;border-radius:8px;white-space:pre-wrap}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}.ch.alto{height:520px}header h1{font-size:17px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"></div><h1>Dashboard de Devoluções</h1>
+  <div class="sp"></div>
+  <span class="info" id="info">Carregando…</span>
+  <button id="atualizar" title="Buscar dados novos da planilha">⟳ Atualizar</button>
+</header>
+
+<div class="wrap">
+  <div class="filtros">
+    <div><label>Chegada de</label><input type="date" id="fIni"></div>
+    <div><label>até</label><input type="date" id="fFim"></div>
+    <div><label>Transportadora</label><select id="fTransp"></select></div>
+    <div><label>Destino</label><select id="fDestino"></select></div>
+    <div><label>Motivo</label><select id="fMotivo"></select></div>
+    <div><label>Família</label><select id="fFamilia"></select></div>
+    <div><label>Responsável</label><select id="fResp"></select></div>
+  </div>
+
+  <nav id="nav">
+    <button data-p="geral" class="on">Visão geral</button>
+    <button data-p="motivos">Motivos</button>
+    <button data-p="produtos">Produtos</button>
+    <button data-p="operacao">Operação</button>
+    <button data-p="registros">Registros</button>
+    <span class="sp"></span>
+    <button id="limpar">Limpar filtros</button>
+  </nav>
+
+  <div id="conteudo"><div class="msg">Carregando dados da planilha…</div></div>
+
+  <div id="paginas" style="display:none">
+    <div class="kpis">
+      <div class="k"><div class="l">Devoluções (registros)</div><div class="v" id="kReg">–</div></div>
+      <div class="k"><div class="l">Unidades devolvidas</div><div class="v" id="kUni">–</div></div>
+      <div class="k"><div class="l">% Estoque saudável</div><div class="v" id="kSaud" style="color:var(--saud)">–</div></div>
+      <div class="k"><div class="l">% Descarte</div><div class="v" id="kDesc" style="color:var(--desc)">–</div></div>
+      <div class="k"><div class="l">Lead time mediano</div><div class="v" id="kLead">–</div></div>
+    </div>
+    <div class="pend" id="kPend"></div>
+
+    <section class="pag on" id="p-geral"><div class="grid">
+      <div class="card full"><h3>Unidades devolvidas por mês e destino</h3><div class="ch"><canvas id="cMes"></canvas></div></div>
+      <div class="card"><h3>Unidades por transportadora</h3><div class="ch"><canvas id="cTransp"></canvas></div></div>
+      <div class="card"><h3>Destino do estoque</h3><div class="ch"><canvas id="cDestino"></canvas></div></div>
+    </div></section>
+
+    <section class="pag" id="p-motivos"><div class="grid">
+      <div class="card"><h3>Motivo da devolução</h3><div class="ch"><canvas id="cMotivo"></canvas></div></div>
+      <div class="card"><h3>Top 12 razões detalhadas</h3><div class="ch"><canvas id="cRazao"></canvas></div></div>
+      <div class="card"><h3>Motivo do descarte</h3><div class="ch"><canvas id="cDescarte"></canvas></div></div>
+      <div class="card"><h3>Retrabalho no estoque saudável</h3><div class="ch"><canvas id="cRetrab"></canvas></div></div>
+    </div></section>
+
+    <section class="pag" id="p-produtos"><div class="grid">
+      <div class="card"><h3>Top 15 SKUs mais devolvidos</h3><div class="ch alto"><canvas id="cSku"></canvas></div></div>
+      <div class="card"><h3>Devoluções por família (prefixo do SKU)</h3><div class="ch alto"><canvas id="cFamilia"></canvas></div></div>
+    </div></section>
+
+    <section class="pag" id="p-operacao"><div class="grid">
+      <div class="card"><h3>Registros por responsável</h3><div class="ch alto"><canvas id="cResp"></canvas></div></div>
+      <div class="card"><h3>Lead time mediano por mês (dias, chegada → internalização)</h3><div class="ch alto"><canvas id="cLead"></canvas></div></div>
+    </div></section>
+
+    <section class="pag" id="p-registros"><div class="card" style="margin-top:14px">
+      <div class="barra"><h3 style="margin:0">Registros</h3><span class="info" id="tabInfo"></span><span class="sp"></span><button id="csv">⬇ Baixar CSV</button></div>
+      <div class="tab"><table><thead><tr>
+        <th>Chegada</th><th>ID</th><th>NFe</th><th>SKU</th><th>Transportadora</th><th>Destino</th><th>Motivo</th><th>Razão</th><th>Responsável</th><th>Internalizada</th><th class="n">QTD</th><th class="n">Lead (dias)</th>
+      </tr></thead><tbody id="tbody"></tbody></table></div>
+    </div></section>
+  </div>
+</div>
+
+<script>
+const CORES = {"Saudável":"#2E9E6B","Descarte":"#D9534F","Doado":"#5B8DEF","Bloqueado":"#F0AD4E","Sem destino":"#9AA0A6"};
+const ORDEM_DESTINO = ["Saudável","Descarte","Sem destino","Doado","Bloqueado"];
+const MESES = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const fmt = new Intl.NumberFormat("pt-BR");
+const fmt1 = new Intl.NumberFormat("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1});
+const $ = (id) => document.getElementById(id);
+let DADOS = [], graficos = {};
+
+Chart.defaults.locale = "pt-BR";
+Chart.defaults.font.family = "Roboto, Arial, sans-serif";
+Chart.defaults.color = "#5f6368";
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+
+const dt = (s) => s ? new Date(s) : null;
+const dataBR = (s) => s ? s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4)+" "+s.slice(11,16) : "";
+const mesChave = (s) => s.slice(0,7);
+const mesRot = (k) => MESES[+k.slice(5,7)-1]+"/"+k.slice(2,4);
+const mediana = (a) => { if(!a.length) return null; const b=[...a].sort((x,y)=>x-y), m=b.length>>1; return b.length%2?b[m]:(b[m-1]+b[m])/2; };
+const lead = (r) => { if(!r.internalizada) return null; const d=(dt(r.internalizada)-dt(r.chegada))/86400000; return d>=0?d:null; };
+
+function soma(rows, chave, filtro){ const m=new Map(); for(const r of rows){ if(filtro && !filtro(r)) continue; const k=r[chave]; if(!k) continue; m.set(k,(m.get(k)||0)+r.qtd);} return m; }
+const topN = (m,n) => [...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n);
+
+function preencherSelect(el, valores){
+  const atual = el.value;
+  el.innerHTML = '<option value="">Todos</option>' + valores.map(v=>`<option>${v.replace(/</g,"&lt;")}</option>`).join("");
+  if (valores.includes(atual)) el.value = atual;
+}
+
+function montarFiltros(){
+  const uniq = (k) => [...new Set(DADOS.map(r=>r[k]))].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  preencherSelect($("fTransp"), uniq("transportadora"));
+  preencherSelect($("fDestino"), uniq("destino"));
+  preencherSelect($("fMotivo"), uniq("motivo"));
+  preencherSelect($("fFamilia"), uniq("familia"));
+  preencherSelect($("fResp"), uniq("responsavel"));
+  const datas = DADOS.map(r=>r.chegada).sort();
+  if (!$("fIni").value) $("fIni").value = datas[0].slice(0,10);
+  if (!$("fFim").value) $("fFim").value = datas[datas.length-1].slice(0,10);
+}
+
+function filtrados(){
+  const ini=$("fIni").value, fim=$("fFim").value;
+  const f = {transportadora:$("fTransp").value, destino:$("fDestino").value, motivo:$("fMotivo").value, familia:$("fFamilia").value, responsavel:$("fResp").value};
+  return DADOS.filter(r => (!ini || r.chegada.slice(0,10)>=ini) && (!fim || r.chegada.slice(0,10)<=fim) &&
+    Object.entries(f).every(([k,v]) => !v || r[k]===v));
+}
+
+function grafico(id, cfg){
+  if (graficos[id]) graficos[id].destroy();
+  cfg.options = Object.assign({responsive:true, maintainAspectRatio:false, animation:{duration:300}}, cfg.options||{});
+  graficos[id] = new Chart($(id), cfg);
+}
+function barrasH(id, pares, cor){
+  grafico(id,{type:"bar",data:{labels:pares.map(p=>p[0]),datasets:[{label:"Unidades",data:pares.map(p=>p[1]),backgroundColor:cor||"#4285F4",borderRadius:3}]},
+    options:{indexAxis:"y",plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+fmt.format(c.raw)}}},scales:{x:{grid:{color:"#eee"}},y:{grid:{display:false},ticks:{autoSkip:false}}}}});
+}
+function empilhado(id, rows, chave, rotulos, horizontal){
+  const destinos = ORDEM_DESTINO.filter(d => rows.some(r=>r.destino===d));
+  const ds = destinos.map(d => ({label:d, backgroundColor:CORES[d]||"#bbb",
+    data: rotulos.map(l => rows.reduce((s,r)=> s + (r[chave]===l && r.destino===d ? r.qtd : 0), 0))}));
+  grafico(id,{type:"bar",data:{labels: chave==="mes"?rotulos.map(mesRot):rotulos, datasets:ds},
+    options:{indexAxis:horizontal?"y":"x",plugins:{legend:{position:"top"}},
+      scales:{x:{stacked:true,grid:{color:horizontal?"#eee":"transparent"}},y:{stacked:true,grid:{color:horizontal?"transparent":"#eee"},ticks:{autoSkip:false}}}}});
+}
+
+function render(){
+  const rows = filtrados().map(r => Object.assign(r,{mes:mesChave(r.chegada)}));
+  const uni = rows.reduce((s,r)=>s+r.qtd,0);
+  const saud = rows.reduce((s,r)=>s+(r.destino==="Saudável"?r.qtd:0),0);
+  const desc = rows.reduce((s,r)=>s+(r.destino==="Descarte"?r.qtd:0),0);
+  const leads = rows.map(lead).filter(v=>v!==null);
+  const med = mediana(leads);
+  $("kReg").textContent = fmt.format(rows.length);
+  $("kUni").textContent = fmt.format(uni);
+  $("kSaud").textContent = uni ? fmt1.format(saud/uni*100)+"%" : "–";
+  $("kDesc").textContent = uni ? fmt1.format(desc/uni*100)+"%" : "–";
+  $("kLead").textContent = med===null ? "–" : fmt1.format(med)+" dias";
+  $("kPend").textContent = "⏳ " + fmt.format(rows.filter(r=>!r.internalizada).length) + " registros ainda sem data de internalização";
+
+  const meses = [...new Set(rows.map(r=>r.mes))].sort();
+  empilhado("cMes", rows, "mes", meses, false);
+  barrasH("cTransp", topN(soma(rows,"transportadora"),12));
+  const dest = soma(rows,"destino"); const dl = ORDEM_DESTINO.filter(d=>dest.has(d));
+  grafico("cDestino",{type:"doughnut",data:{labels:dl,datasets:[{data:dl.map(d=>dest.get(d)),backgroundColor:dl.map(d=>CORES[d]),borderWidth:2}]},
+    options:{cutout:"62%",plugins:{legend:{position:"right"},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt.format(c.raw)} (${fmt1.format(c.raw/uni*100)}%)`}}}}});
+
+  barrasH("cMotivo", topN(soma(rows,"motivo"),12));
+  barrasH("cRazao", topN(soma(rows,"razao"),12));
+  barrasH("cDescarte", topN(soma(rows,"descarte"),10), CORES["Descarte"]);
+  barrasH("cRetrab", topN(soma(rows,"retrabalho"),10), CORES["Saudável"]);
+
+  empilhado("cSku", rows, "item", topN(soma(rows,"item"),15).map(p=>p[0]), true);
+  empilhado("cFamilia", rows, "familia", topN(soma(rows,"familia"),12).map(p=>p[0]), false);
+
+  const resp = new Map(); rows.forEach(r=>resp.set(r.responsavel,(resp.get(r.responsavel)||0)+1));
+  const rp = topN(resp,20);
+  grafico("cResp",{type:"bar",data:{labels:rp.map(p=>p[0]),datasets:[{label:"Registros",data:rp.map(p=>p[1]),backgroundColor:"#4285F4",borderRadius:3}]},
+    options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{y:{ticks:{autoSkip:false},grid:{display:false}},x:{grid:{color:"#eee"}}}}});
+  const lm = meses.map(m => mediana(rows.filter(r=>r.mes===m).map(lead).filter(v=>v!==null)));
+  grafico("cLead",{type:"line",data:{labels:meses.map(mesRot),datasets:[{label:"Dias (mediana)",data:lm,borderColor:"#4285F4",backgroundColor:"rgba(66,133,244,.12)",fill:true,tension:.25,pointRadius:4}]},
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+(c.raw===null?"–":fmt1.format(c.raw)+" dias")}}},scales:{y:{beginAtZero:true,grid:{color:"#eee"}},x:{grid:{display:false}}}}});
+
+  const ord = [...rows].sort((a,b)=>b.chegada.localeCompare(a.chegada));
+  const LIM = 500;
+  $("tabInfo").textContent = ord.length > LIM ? `mostrando os ${LIM} mais recentes de ${fmt.format(ord.length)} (o CSV traz todos)` : `${fmt.format(ord.length)} registros`;
+  const esc = (s) => String(s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  $("tbody").innerHTML = ord.slice(0,LIM).map(r => { const l=lead(r); return `<tr><td>${dataBR(r.chegada)}</td><td>${esc(r.id)}</td><td>${esc(r.nfe)}</td><td>${esc(r.item)}</td><td>${esc(r.transportadora)}</td><td>${esc(r.destino)}</td><td>${esc(r.motivo)}</td><td>${esc(r.razao)}</td><td>${esc(r.responsavel)}</td><td>${dataBR(r.internalizada)}</td><td class="n">${fmt.format(r.qtd)}</td><td class="n">${l===null?"":fmt1.format(l)}</td></tr>`; }).join("");
+  window._linhas = ord;
+}
+
+function baixarCSV(){
+  const cab = ["Chegada","ID","NFe","SKU","Família","Transportadora","Destino","Motivo","Razão","Motivo descarte","Retrabalho","Responsável","Internalizada","QTD","Lead (dias)"];
+  const q = (v) => `"${String(v??"").replace(/"/g,'""')}"`;
+  const linhas = (window._linhas||[]).map(r => { const l=lead(r); return [dataBR(r.chegada),r.id,r.nfe,r.item,r.familia,r.transportadora,r.destino,r.motivo,r.razao,r.descarte,r.retrabalho,r.responsavel,dataBR(r.internalizada),String(r.qtd).replace(".",","),l===null?"":fmt1.format(l)].map(q).join(";"); });
+  const blob = new Blob(["﻿"+[cab.map(q).join(";"),...linhas].join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "devolucoes_filtradas.csv"; a.click();
+}
+
+async function carregar(forcar){
+  $("info").textContent = "Carregando…";
+  try{
+    const r = await fetch("/api/dados" + (forcar ? "?t="+Date.now() : ""));
+    const j = await r.json();
+    if (!r.ok || j.erro) throw new Error(j.erro || ("HTTP "+r.status));
+    DADOS = j.registros;
+    if (!DADOS.length) throw new Error("A planilha não retornou registros.");
+    $("conteudo").style.display = "none"; $("paginas").style.display = "block";
+    montarFiltros(); render();
+    const d = new Date(j.atualizadoEm);
+    $("info").textContent = "Dados de " + d.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}) + " · Google Sheets";
+  }catch(e){
+    $("info").textContent = "Erro ao carregar";
+    $("conteudo").innerHTML = `<div class="erro">Não consegui carregar os dados.\n\n${String(e.message||e)}</div>`;
+  }
+}
+
+document.querySelectorAll("nav button[data-p]").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button[data-p]").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll(".pag").forEach(p=>p.classList.toggle("on",p.id==="p-"+b.dataset.p));
+  Object.values(graficos).forEach(g=>g.resize());
+});
+["fIni","fFim","fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id => $(id).onchange = render);
+$("limpar").onclick = () => { ["fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id=>$(id).value=""); $("fIni").value=""; $("fFim").value=""; montarFiltros(); render(); };
+$("csv").onclick = baixarCSV;
+$("atualizar").onclick = () => carregar(true);
+carregar(false);
+</script>
+</body>
+</html>
