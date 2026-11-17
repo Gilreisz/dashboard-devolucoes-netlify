@@ -76,6 +76,13 @@
   .hero .btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.3);color:#fff;position:relative;z-index:1}
   .hero .btn:hover{background:rgba(255,255,255,.16)}
   .menu-btn{display:none}
+  [hidden]{display:none!important}
+  .secoes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:3px;background:var(--campo);border:1px solid var(--line);border-radius:12px;padding:4px;margin:0 2px 12px}
+  .secoes button{display:flex;align-items:center;justify-content:center;gap:5px;border:0;background:none;color:var(--sub);padding:9px 4px;border-radius:9px;font-size:12.5px;min-width:0;white-space:nowrap;font-weight:600;transition:background .2s,color .2s}
+  .secoes button svg{width:14px;height:14px;flex:none}
+  .secoes button.on{background:var(--card2);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  td.tags{white-space:normal;min-width:260px}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;margin:1px 4px 1px 0;background:color-mix(in srgb,var(--marca) 16%,transparent);color:var(--marca)}
 
   /* ===== KPIs ===== */
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:18px}
@@ -137,19 +144,30 @@
       <div class="brand-ic">
         <img src="logo.png" alt="" onerror="this.outerHTML='&lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;&lt;path d=&quot;M3 12a9 9 0 1 0 3-6.7L3 8&quot;/&gt;&lt;path d=&quot;M3 3v5h5&quot;/&gt;&lt;/svg&gt;'">
       </div>
-      <div><b>LOGÍSTICA</b><small>Zebrands · devoluções</small></div>
+      <div><b>LOGÍSTICA</b><small>Zebrands · devoluções e recebimento</small></div>
     </div>
 
-    <nav id="nav">
+    <div class="secoes">
+      <button data-s="dev" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Devolução</button>
+      <button data-s="rec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Recebimento</button>
+    </div>
+    <nav data-sec="dev">
       <button data-p="geral" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Visão geral</button>
       <button data-p="motivos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/></svg>Motivos</button>
       <button data-p="produtos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg>Produtos</button>
       <button data-p="operacao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14a6 6 0 0 1 3.5 6"/></svg>Operação</button>
       <button data-p="registros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Registros</button>
     </nav>
+    <nav data-sec="rec" hidden>
+      <button data-p="rgeral" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Visão geral</button>
+      <button data-p="rforn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg>Fornecedores</button>
+      <button data-p="rtempo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Tempos</button>
+      <button data-p="rpend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>Pendências</button>
+      <button data-p="rreg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Registros</button>
+    </nav>
 
     <div class="sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"/></svg>Filtros</div>
-    <div class="campo">
+    <div class="campo" data-sec="dev">
       <label for="fIni">Chegada de</label><input type="date" id="fIni">
       <label for="fFim">até</label><input type="date" id="fFim">
       <label for="fTransp">Transportadora</label><select id="fTransp"></select>
@@ -157,6 +175,13 @@
       <label for="fMotivo">Motivo</label><select id="fMotivo"></select>
       <label for="fFamilia">Família</label><select id="fFamilia"></select>
       <label for="fResp">Responsável</label><select id="fResp"></select>
+    </div>
+    <div class="campo" data-sec="rec" hidden>
+      <label for="gIni">Chegada de</label><input type="date" id="gIni">
+      <label for="gFim">até</label><input type="date" id="gFim">
+      <label for="gForn">Fornecedor</label><select id="gForn"></select>
+      <label for="gStatus">Status do recebimento</label><select id="gStatus"></select>
+      <label for="gResp">Responsável</label><select id="gResp"></select>
     </div>
     <div class="side-acoes">
       <button class="btn" id="limpar">Limpar filtros</button>
@@ -183,6 +208,7 @@
     <div id="conteudo"><div class="msg">Carregando dados da planilha…</div></div>
 
     <div id="paginas" style="display:none">
+     <div data-sec="dev">
       <div class="kpis">
         <div class="k anim" style="--d:.08s"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></div><div><div class="l">Devoluções</div><div class="v" id="kReg">–</div><div class="s">registros no período</div></div></div>
         <div class="k anim" style="--d:.14s"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg></div><div><div class="l">Unidades</div><div class="v" id="kUni">–</div><div class="s">itens devolvidos</div></div></div>
@@ -191,6 +217,17 @@
         <div class="k anim" style="--d:.32s"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><div class="l">Lead time mediano</div><div class="v" id="kLead">–</div><div class="s">chegada → internalização</div></div></div>
       </div>
       <div class="pend anim" style="--d:.38s" id="kPend"></div>
+     </div>
+     <div data-sec="rec" hidden>
+      <div class="kpis">
+        <div class="k"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div><div><div class="l">Notas recebidas</div><div class="v" id="kRNotas">–</div><div class="s" id="kRNotasS">no período</div></div></div>
+        <div class="k"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg></div><div><div class="l">Volumes</div><div class="v" id="kRVol">–</div><div class="s" id="kRVolS">recebidos</div></div></div>
+        <div class="k"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><div class="l">Tempo mediano</div><div class="v" id="kRLead">–</div><div class="s">chegada → internalização</div></div></div>
+        <div class="k"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div><div class="l">Concluídos</div><div class="v" id="kRConc" style="color:var(--verde-txt)">–</div><div class="s" id="kRConcS">das notas</div></div></div>
+        <div class="k"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg></div><div><div class="l">Com pendência</div><div class="v" id="kRPend" style="color:var(--verm-txt)">–</div><div class="s">notas a resolver</div></div></div>
+      </div>
+      <div class="pend" id="kRAviso"></div>
+     </div>
 
       <section class="pag on" id="p-geral"><div class="grid">
         <div class="card full anim" style="--d:.44s"><h3>Unidades devolvidas por mês e destino</h3><div class="sub">Quantidade por mês de chegada, separada pelo destino do estoque.</div><div class="ch"><canvas id="cMes"></canvas></div></div>
@@ -220,6 +257,38 @@
         <div class="tab"><table><thead><tr>
           <th>Chegada</th><th>ID</th><th>NFe</th><th>SKU</th><th>Transportadora</th><th>Destino</th><th>Motivo</th><th>Razão</th><th>Responsável</th><th>Internalizada</th><th class="n">QTD</th><th class="n">Lead (dias)</th>
         </tr></thead><tbody id="tbody"></tbody></table></div>
+      </div></section>
+      <div class="erro" id="recMsg" hidden></div>
+
+      <section class="pag" id="p-rgeral"><div class="grid">
+        <div class="card full"><h3>Volumes recebidos por mês</h3><div class="sub">Soma dos volumes pela data de chegada.</div><div class="ch"><canvas id="cRMes"></canvas></div></div>
+        <div class="card"><h3>Notas recebidas por semana</h3><div class="sub">Quantidade de notas que chegaram em cada semana (últimas 16).</div><div class="ch"><canvas id="cRSem"></canvas></div></div>
+        <div class="card"><h3>Status do recebimento</h3><div class="sub">Notas por situação atual.</div><div class="ch"><canvas id="cRStatus"></canvas></div></div>
+      </div></section>
+
+      <section class="pag" id="p-rforn"><div class="grid">
+        <div class="card"><h3>Volumes por fornecedor</h3><div class="sub">Quem mais enviou no período.</div><div class="ch alto"><canvas id="cRForn"></canvas></div></div>
+        <div class="card"><h3>Notas por fornecedor</h3><div class="sub">Quantidade de notas recebidas.</div><div class="ch alto"><canvas id="cRFornN"></canvas></div></div>
+        <div class="card full"><h3>Tempo mediano por fornecedor (dias)</h3><div class="sub">Chegada → internalização, fornecedores com 3 notas ou mais.</div><div class="ch"><canvas id="cRFornL"></canvas></div></div>
+      </div></section>
+
+      <section class="pag" id="p-rtempo"><div class="grid">
+        <div class="card full"><h3>Tempo mediano de cada etapa por mês (dias)</h3><div class="sub">Emissão → chegada, chegada → registro e registro → internalização.</div><div class="ch"><canvas id="cREtapas"></canvas></div></div>
+        <div class="card"><h3>Distribuição do tempo de recebimento</h3><div class="sub">Notas por faixa de dias entre chegada e internalização.</div><div class="ch"><canvas id="cRDist"></canvas></div></div>
+        <div class="card"><h3>Tempo mediano por mês (dias)</h3><div class="sub">Chegada → internalização.</div><div class="ch"><canvas id="cRLeadMes"></canvas></div></div>
+      </div></section>
+
+      <section class="pag" id="p-rpend"><div class="grid">
+        <div class="card full"><h3>Pendências por tipo</h3><div class="sub">Uma nota pode ter mais de uma pendência.</div><div class="ch"><canvas id="cRPend"></canvas></div></div>
+        <div class="card full"><div class="barra"><h3>Notas com pendência</h3><span class="info2" id="tabPInfo"></span></div>
+          <div class="tab"><table><thead><tr><th>Chegada</th><th>ORDER ID</th><th>Nota fiscal</th><th>Fornecedor</th><th>Status</th><th class="n">Dias desde a chegada</th><th>Pendências</th></tr></thead><tbody id="tbodyP"></tbody></table></div></div>
+      </div></section>
+
+      <section class="pag" id="p-rreg"><div class="card" style="margin-top:16px">
+        <div class="barra"><h3>Recebimentos</h3><span class="info2" id="tabRInfo"></span><span class="sp"></span><button class="btn" id="csvR">⬇ Baixar CSV</button></div>
+        <div class="tab"><table><thead><tr>
+          <th>Chegada</th><th>ORDER ID</th><th>Nota fiscal</th><th>Fornecedor</th><th>Emissão</th><th>Registro</th><th>Internalizada</th><th class="n">Volumes</th><th>Status</th><th>Responsável</th><th class="n">Tempo (dias)</th>
+        </tr></thead><tbody id="tbodyR"></tbody></table></div>
       </div></section>
     </div>
   </main>
@@ -393,16 +462,120 @@ function baixarCSV(){
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "devolucoes_filtradas.csv"; a.click();
 }
 
+
+// ================= RECEBIMENTO =================
+let DADOS_REC = [], ERRO_REC = null, SECAO = "dev";
+const diasEntre = (a,b) => { if(!a||!b) return null; const d=(dt(b)-dt(a))/86400000; return d>=0?d:null; };
+const concluido = (r) => /conclu/i.test(r.status);
+const curto = (t,n=30) => t.length>n ? t.slice(0,n-1)+"…" : t;
+const r1 = (v) => v===null ? null : Math.round(v*10)/10;
+function pendencias(r){ const p=[];
+  if(!concluido(r)) p.push("Recebimento não concluído");
+  if(!r.xml) p.push("Sem envio de XML");
+  if(!r.registro) p.push("Sem data de registro");
+  if(!r.internalizada) p.push("Sem internalização");
+  if(!r.volumes) p.push("Volumes zerados");
+  return p; }
+
+function montarFiltrosRec(){
+  const uniq = (k) => [...new Set(DADOS_REC.map(r=>r[k]))].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  preencherSelect($("gForn"), uniq("fornecedor")); preencherSelect($("gStatus"), uniq("status")); preencherSelect($("gResp"), uniq("responsavel"));
+  const d = DADOS_REC.map(r=>r.chegada).sort();
+  if (d.length && !$("gIni").value) $("gIni").value = d[0].slice(0,10);
+  if (d.length && !$("gFim").value) $("gFim").value = d[d.length-1].slice(0,10);
+}
+function filtradosRec(){
+  const ini=$("gIni").value, fim=$("gFim").value, f={fornecedor:$("gForn").value,status:$("gStatus").value,responsavel:$("gResp").value};
+  return DADOS_REC.filter(r => (!ini||r.chegada.slice(0,10)>=ini) && (!fim||r.chegada.slice(0,10)<=fim) && Object.entries(f).every(([k,v])=>!v||r[k]===v));
+}
+function semanaChave(s){ const d=new Date(s.slice(0,10)+"T12:00:00"); const dia=(d.getDay()+6)%7; d.setDate(d.getDate()-dia); return d.toISOString().slice(0,10); }
+
+function renderRec(){
+  const vazio = ERRO_REC || !DADOS_REC.length;
+  $("recMsg").hidden = !(SECAO==="rec" && vazio);
+  if (vazio){ $("recMsg").textContent = "Não consegui carregar a aba de recebimento.\n\n" + (ERRO_REC || "A aba não retornou registros."); return; }
+  const rows = filtradosRec();
+  const vol = rows.reduce((s,r)=>s+r.volumes,0);
+  const leads = rows.map(r=>diasEntre(r.chegada,r.internalizada)).filter(v=>v!==null);
+  const conc = rows.filter(concluido).length;
+  const comPend = rows.filter(r=>pendencias(r).length);
+  contar("kRNotas", rows.length, v=>fmt.format(Math.round(v)));
+  contar("kRVol", vol, v=>fmt.format(Math.round(v)));
+  contar("kRLead", mediana(leads), v=>fmt1.format(v)+"<small> dias</small>");
+  contar("kRConc", rows.length? conc/rows.length*100 : null, v=>fmt1.format(v)+"<small>%</small>");
+  contar("kRPend", comPend.length, v=>fmt.format(Math.round(v)));
+  $("kRNotasS").textContent = fmt.format(new Set(rows.map(r=>r.fornecedor)).size) + " fornecedores";
+  $("kRVolS").textContent = rows.length ? "média de " + fmt.format(Math.round(vol/rows.length)) + " por nota" : "recebidos";
+  $("kRConcS").textContent = fmt.format(conc) + " de " + fmt.format(rows.length) + " notas";
+  const emRec = rows.filter(r=>!concluido(r)).length;
+  $("kRAviso").innerHTML = `📥 <span><b>${fmt.format(emRec)}</b> notas ainda em recebimento · <b>${fmt.format(rows.filter(r=>!r.internalizada).length)}</b> sem internalização</span>`;
+
+  // Visão geral
+  const meses = [...new Set(rows.map(r=>mesChave(r.chegada)))].sort();
+  grafico("cRMes",{type:"bar",data:{labels:meses.map(mesRot),datasets:[{label:"Volumes",data:meses.map(m=>rows.filter(r=>mesChave(r.chegada)===m).reduce((s,r)=>s+r.volumes,0)),backgroundColor:css("--marca2"),borderRadius:6}]},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:css("--grid")}},x:{grid:{display:false}}}}});
+  const sems = [...new Set(rows.map(r=>semanaChave(r.chegada)))].sort().slice(-16);
+  grafico("cRSem",{type:"line",data:{labels:sems.map(w=>w.slice(8,10)+"/"+w.slice(5,7)),datasets:[{label:"Notas",data:sems.map(w=>rows.filter(r=>semanaChave(r.chegada)===w).length),borderColor:css("--marca"),backgroundColor:css("--marca")+"22",fill:true,tension:.3,pointRadius:3}]},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>"Semana de "+c[0].label}}},scales:{y:{beginAtZero:true,grid:{color:css("--grid")}},x:{grid:{display:false}}}}});
+  const st = new Map(); rows.forEach(r=>st.set(r.status,(st.get(r.status)||0)+1));
+  const stl = [...st.entries()].sort((a,b)=>b[1]-a[1]);
+  const corSt = (n) => /conclu/i.test(n) ? css("--saud") : /receb/i.test(n) ? css("--marca") : css("--sem");
+  grafico("cRStatus",{type:"doughnut",data:{labels:stl.map(x=>x[0]),datasets:[{data:stl.map(x=>x[1]),backgroundColor:stl.map(x=>corSt(x[0])),borderWidth:2,borderColor:css("--card")}]},
+    options:{cutout:"62%",plugins:{legend:{position:"right"}}}});
+
+  // Fornecedores
+  const vf = new Map(), nf = new Map(), lf = new Map();
+  rows.forEach(r=>{ vf.set(r.fornecedor,(vf.get(r.fornecedor)||0)+r.volumes); nf.set(r.fornecedor,(nf.get(r.fornecedor)||0)+1);
+    const l=diasEntre(r.chegada,r.internalizada); if(l!==null){ if(!lf.has(r.fornecedor)) lf.set(r.fornecedor,[]); lf.get(r.fornecedor).push(l);} });
+  const tv = topN(vf,12), tn = topN(nf,12);
+  barrasH("cRForn", tv.map(([k,v])=>[curto(k),v]));
+  barrasH("cRFornN", tn.map(([k,v])=>[curto(k),v]), css("--marca"));
+  const lm = [...lf.entries()].filter(([,a])=>a.length>=3).map(([k,a])=>[curto(k,34), r1(mediana(a))]).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  barrasH("cRFornL", lm, "#8B5CF6");
+
+  // Tempos
+  const et = [["Emissão → chegada","emissao","chegada","#60A5FA"],["Chegada → registro","chegada","registro",css("--marca")],["Registro → internalização","registro","internalizada",css("--saud")]];
+  grafico("cREtapas",{type:"bar",data:{labels:meses.map(mesRot),datasets:et.map(([n,a,b,c])=>({label:n,backgroundColor:c,data:meses.map(m=>r1(mediana(rows.filter(r=>mesChave(r.chegada)===m).map(r=>diasEntre(r[a],r[b])).filter(v=>v!==null))))}))},
+    options:{datasets:{bar:{borderRadius:2}},plugins:{legend:{position:"top"},tooltip:{mode:"index",callbacks:{label:c=>` ${c.dataset.label}: ${c.raw===null?"–":fmt1.format(c.raw)+" dias"}`}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:css("--grid")}}}}});
+  const faixas = [["< 1 dia",0,1],["1 a 2",1,2],["2 a 3",2,3],["3 a 5",3,5],["5 a 7",5,7],["> 7 dias",7,1e9]];
+  grafico("cRDist",{type:"bar",data:{labels:faixas.map(f=>f[0]),datasets:[{label:"Notas",data:faixas.map(([,a,b])=>leads.filter(v=>v>=a&&v<b).length),backgroundColor:css("--marca2"),borderRadius:6}]},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:css("--grid")}},x:{grid:{display:false}}}}});
+  grafico("cRLeadMes",{type:"line",data:{labels:meses.map(mesRot),datasets:[{label:"Dias",data:meses.map(m=>r1(mediana(rows.filter(r=>mesChave(r.chegada)===m).map(r=>diasEntre(r.chegada,r.internalizada)).filter(v=>v!==null)))),borderColor:css("--marca2"),backgroundColor:css("--marca2")+"22",fill:true,tension:.25,pointRadius:4}]},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:css("--grid")}},x:{grid:{display:false}}}}});
+
+  // Pendências
+  const tipos = new Map(); comPend.forEach(r=>pendencias(r).forEach(p=>tipos.set(p,(tipos.get(p)||0)+1)));
+  barrasH("cRPend", [...tipos.entries()].sort((a,b)=>b[1]-a[1]), css("--desc"));
+  const esc = (v) => String(v??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  const agora = Date.now();
+  const pend = [...comPend].sort((a,b)=>a.chegada.localeCompare(b.chegada));
+  $("tabPInfo").textContent = fmt.format(pend.length) + " notas, as mais antigas primeiro";
+  $("tbodyP").innerHTML = pend.slice(0,500).map(r=>`<tr><td>${dataBR(r.chegada)}</td><td>${esc(r.id)}</td><td>${esc(r.nf)}</td><td>${esc(curto(r.fornecedor,40))}</td><td>${esc(r.status)}</td><td class="n">${fmt.format(Math.floor((agora-dt(r.chegada))/864e5))}</td><td class="tags">${pendencias(r).map(p=>`<span class="tag">${p}</span>`).join("")}</td></tr>`).join("");
+
+  // Registros
+  const ord = [...rows].sort((a,b)=>b.chegada.localeCompare(a.chegada));
+  $("tabRInfo").textContent = ord.length>500 ? `mostrando os 500 mais recentes de ${fmt.format(ord.length)} (o CSV traz todos)` : `${fmt.format(ord.length)} notas`;
+  $("tbodyR").innerHTML = ord.slice(0,500).map(r=>{const l=diasEntre(r.chegada,r.internalizada); return `<tr><td>${dataBR(r.chegada)}</td><td>${esc(r.id)}</td><td>${esc(r.nf)}</td><td>${esc(curto(r.fornecedor,40))}</td><td>${dataBR(r.emissao)}</td><td>${dataBR(r.registro)}</td><td>${dataBR(r.internalizada)}</td><td class="n">${fmt.format(r.volumes)}</td><td>${esc(r.status)}</td><td>${esc(r.responsavel)}</td><td class="n">${l===null?"":fmt1.format(l)}</td></tr>`;}).join("");
+  window._linhasR = ord;
+}
+function baixarCSVRec(){
+  const cab=["Chegada","ORDER ID","Nota fiscal","Fornecedor","Emissão","Envio XML","Registro","Internalizada","Volumes","Status","Responsável","PO","Tempo (dias)","Pendências"];
+  const q=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const lin=(window._linhasR||[]).map(r=>{const l=diasEntre(r.chegada,r.internalizada); return [dataBR(r.chegada),r.id,r.nf,r.fornecedor,dataBR(r.emissao),dataBR(r.xml),dataBR(r.registro),dataBR(r.internalizada),r.volumes,r.status,r.responsavel,r.po,l===null?"":fmt1.format(l),pendencias(r).join(" | ")].map(q).join(";");});
+  const blob=new Blob(["﻿"+[cab.map(q).join(";"),...lin].join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="recebimentos_filtrados.csv"; a.click();
+}
+
 async function carregar(forcar){
   $("info").textContent = "Carregando…";
   try{
     const r = await fetch("/api/dados" + (forcar ? "?t="+Date.now() : ""));
     const j = await r.json();
     if (!r.ok || j.erro) throw new Error(j.erro || ("HTTP "+r.status));
-    DADOS = j.registros;
+    DADOS = j.registros; DADOS_REC = j.recebimentos || []; ERRO_REC = j.erroReceb || null;
     if (!DADOS.length) throw new Error("A planilha não retornou registros.");
     $("conteudo").style.display = "none"; $("paginas").style.display = "block";
-    montarFiltros(); render(); primeira = false;
+    montarFiltros(); if (DADOS_REC.length) montarFiltrosRec(); render(); renderRec(); primeira = false;
     const d = new Date(j.atualizadoEm);
     $("info").textContent = d.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
   }catch(e){
@@ -412,25 +585,40 @@ async function carregar(forcar){
 }
 
 const TITULOS = {geral:["Devoluções","Registros do AppSheet · visão geral do período"], motivos:["Motivos","Por que os produtos voltaram e para onde foram"],
-  produtos:["Produtos","SKUs e famílias com mais devoluções"], operacao:["Operação","Produtividade da equipe e tempo de internalização"], registros:["Registros","Lista completa com exportação para CSV"]};
+  produtos:["Produtos","SKUs e famílias com mais devoluções"], operacao:["Operação","Produtividade da equipe e tempo de internalização"], registros:["Registros","Lista completa com exportação para CSV"],
+  rgeral:["Recebimento","Notas recebidas no armazém · visão geral do período"], rforn:["Fornecedores","Volumes, notas e tempo por fornecedor"],
+  rtempo:["Tempos de recebimento","Quanto tempo cada etapa leva, da emissão à internalização"], rpend:["Pendências","Notas que ainda precisam de ação"], rreg:["Recebimentos","Lista completa com exportação para CSV"]};
+function ativarSecao(sec){
+  SECAO = sec;
+  document.querySelectorAll(".secoes button").forEach(b=>b.classList.toggle("on",b.dataset.s===sec));
+  document.querySelectorAll("[data-sec]").forEach(el=>el.hidden = el.dataset.sec!==sec);
+  const atual = document.querySelector(`nav[data-sec="${sec}"] button.on`) || document.querySelector(`nav[data-sec="${sec}"] button`);
+  atual.click();
+  if (sec==="rec") renderRec();
+}
+document.querySelectorAll(".secoes button").forEach(b=>b.onclick=()=>ativarSecao(b.dataset.s));
 function menu(abrir){ if(abrir) $("side").scrollTop = 0; $("side").classList.toggle("aberto",abrir); $("veu").classList.toggle("on",abrir); }
 $("menuBtn").onclick = () => menu(true); $("veu").onclick = () => menu(false);
 document.querySelectorAll("nav button[data-p]").forEach(b => b.onclick = () => {
-  document.querySelectorAll("nav button[data-p]").forEach(x=>x.classList.toggle("on",x===b));
+  b.parentElement.querySelectorAll("button[data-p]").forEach(x=>x.classList.toggle("on",x===b));
   $("hTitulo").textContent = TITULOS[b.dataset.p][0]; $("hSub").textContent = TITULOS[b.dataset.p][1]; menu(false);
   const pg = $("p-"+b.dataset.p); pg.querySelectorAll(".card").forEach((c,i)=>{ c.classList.remove("anim"); void c.offsetWidth; c.style.setProperty("--d",(i*0.06)+"s"); c.classList.add("anim"); });
   document.querySelectorAll(".pag").forEach(p=>p.classList.toggle("on",p.id==="p-"+b.dataset.p));
   Object.values(graficos).forEach(g=>g.resize());
 });
 ["fIni","fFim","fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id => $(id).onchange = render);
-$("limpar").onclick = () => { ["fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id=>$(id).value=""); $("fIni").value=""; $("fFim").value=""; montarFiltros(); render(); };
+["gIni","gFim","gForn","gStatus","gResp"].forEach(id => $(id).onchange = renderRec);
+$("limpar").onclick = () => {
+  if (SECAO==="rec"){ ["gIni","gFim","gForn","gStatus","gResp"].forEach(id=>$(id).value=""); montarFiltrosRec(); renderRec(); return; }
+  ["fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id=>$(id).value=""); $("fIni").value=""; $("fFim").value=""; montarFiltros(); render(); };
+$("csvR").onclick = baixarCSVRec;
 $("csv").onclick = baixarCSV;
 $("atualizar").onclick = () => carregar(true);
 function temaEscuro(){ const t = document.documentElement.dataset.theme; return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; }
 function aplicarTema(){
   $("tema").textContent = temaEscuro() ? "☀️" : "🌙";
   Chart.defaults.color = css("--sub"); Chart.defaults.borderColor = css("--grid");
-  lerCores(); if (DADOS.length) render();
+  lerCores(); if (DADOS.length) { render(); renderRec(); }
 }
 $("tema").onclick = () => {
   const novo = temaEscuro() ? "light" : "dark"; document.documentElement.dataset.theme = novo;
