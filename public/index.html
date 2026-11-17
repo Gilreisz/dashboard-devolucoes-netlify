@@ -81,6 +81,16 @@
   .secoes button{display:flex;align-items:center;justify-content:center;gap:5px;border:0;background:none;color:var(--sub);padding:9px 4px;border-radius:9px;font-size:12.5px;min-width:0;white-space:nowrap;font-weight:600;transition:background .2s,color .2s}
   .secoes button svg{width:14px;height:14px;flex:none}
   .secoes button.on{background:var(--card2);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:16px}
+  .mini .k{border-top:3px solid var(--line)} .mini .k.ok{border-top-color:var(--saud)} .mini .k.ruim{border-top-color:var(--desc)} .mini .k.alerta{border-top-color:var(--marca)}
+  .mini .v{font-size:28px}
+  .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .b-ok{background:color-mix(in srgb,var(--saud) 20%,transparent);color:var(--verde-txt)}
+  .b-ruim{background:color-mix(in srgb,var(--desc) 22%,transparent);color:var(--verm-txt)}
+  .b-alerta{background:color-mix(in srgb,var(--marca) 22%,transparent);color:var(--marca)}
+  .b-info{background:color-mix(in srgb,var(--marca2) 22%,transparent);color:#93C5FD}
+  .seg{display:flex;gap:6px;flex-wrap:wrap} .seg button{border:1px solid var(--borda);background:var(--campo);color:var(--sub);border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600}
+  .seg button.on{background:var(--card2);color:var(--txt);border-color:var(--marca)}
   td.tags{white-space:normal;min-width:260px}
   .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;margin:1px 4px 1px 0;background:color-mix(in srgb,var(--marca) 16%,transparent);color:var(--marca)}
 
@@ -162,6 +172,7 @@
       <button data-p="rgeral" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Visão geral</button>
       <button data-p="rforn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg>Fornecedores</button>
       <button data-p="rtempo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Tempos</button>
+      <button data-p="rsla"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6"/><path d="M12 14l3-3"/><circle cx="12" cy="14" r="8"/></svg>Prazo (SLA)</button>
       <button data-p="rpend"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>Pendências</button>
       <button data-p="rreg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Registros</button>
     </nav>
@@ -278,6 +289,30 @@
         <div class="card"><h3>Tempo mediano por mês (dias)</h3><div class="sub">Chegada → internalização.</div><div class="ch"><canvas id="cRLeadMes"></canvas></div></div>
       </div></section>
 
+      <section class="pag" id="p-rsla">
+        <div class="mini">
+          <div class="k ok"><div><div class="l">Internalizadas no prazo</div><div class="v" id="sOkPct" style="color:var(--verde-txt)">–</div><div class="s" id="sOk">–</div></div></div>
+          <div class="k ruim"><div><div class="l">Fora do prazo</div><div class="v" id="sFora" style="color:var(--verm-txt)">–</div><div class="s">internalizadas após 24 h úteis</div></div></div>
+          <div class="k alerta"><div><div class="l">Em aberto · atrasadas</div><div class="v" id="sAbAtr" style="color:var(--marca)">–</div><div class="s">já passaram do prazo</div></div></div>
+          <div class="k"><div><div class="l">Em aberto · no prazo</div><div class="v" id="sAbOk">–</div><div class="s" id="sVence">–</div></div></div>
+          <div class="k"><div><div class="l">Tempo útil mediano</div><div class="v" id="sMed">–</div><div class="s">chegada → internalização</div></div></div>
+        </div>
+        <div class="grid">
+          <div class="card full"><div class="barra"><h3>Data de chegada × internalização (SLA 24 h úteis)</h3><span class="info2" id="slaDiaInfo"></span></div>
+            <div class="sub">Tempo médio em horas úteis, por data de chegada e fornecedor. Linha vermelha = prazo de 24 h úteis (10 h por dia útil).</div>
+            <div class="ch"><canvas id="cSlaDia"></canvas></div></div>
+          <div class="card"><h3>% internalizado no prazo por mês</h3><div class="sub">Notas internalizadas em até 24 horas úteis.</div><div class="ch"><canvas id="cSlaMes"></canvas></div></div>
+          <div class="card"><h3>Tempo útil até a internalização</h3><div class="sub">Notas por faixa de horas úteis (10 h = 1 dia útil).</div><div class="ch"><canvas id="cSlaDist"></canvas></div></div>
+          <div class="card full">
+            <div class="barra"><h3>Tempo de cada nota</h3><span class="info2" id="slaInfo"></span><span class="sp"></span>
+              <div class="seg" id="slaSeg"><button data-f="" class="on">Todas</button><button data-f="fora">Fora do prazo</button><button data-f="atr">Em aberto atrasadas</button><button data-f="aberto">Em aberto no prazo</button><button data-f="ok">No prazo</button></div>
+              <button class="btn" id="csvSla">⬇ CSV</button></div>
+            <div class="sub">Regra: contam só as horas de segunda a sexta, das 08:00 às 18:00. Prazo de 24 horas úteis (10 h por dia) a partir da chegada.</div>
+            <div class="tab"><table><thead><tr><th>Situação</th><th>Chegada</th><th>Prazo limite</th><th>Internalizada</th><th class="n">Horas úteis</th><th class="n">Dias úteis</th><th>ORDER ID</th><th>Nota fiscal</th><th>Fornecedor</th></tr></thead><tbody id="tbodyS"></tbody></table></div>
+          </div>
+        </div>
+      </section>
+
       <section class="pag" id="p-rpend"><div class="grid">
         <div class="card full"><h3>Pendências por tipo</h3><div class="sub">Uma nota pode ter mais de uma pendência.</div><div class="ch"><canvas id="cRPend"></canvas></div></div>
         <div class="card full"><div class="barra"><h3>Notas com pendência</h3><span class="info2" id="tabPInfo"></span></div>
@@ -326,7 +361,8 @@ const Rotulos = { id:"rotulos", afterDatasetsDraw(chart){
         ctx.fillText(fmt1.format(v / total * 100) + "%", pt.x, pt.y); return;
       }
       if (tipo === "line") { ctx.font = "500 11px Roboto, Arial, sans-serif"; ctx.fillStyle = css("--txt"); ctx.fillText(fmt1.format(v), el.x, el.y - 13); return; }
-      const txt = fmt.format(v); ctx.font = "500 11px Roboto, Arial, sans-serif";
+      const suf = (chart.options.plugins.rotulos && chart.options.plugins.rotulos.sufixo) || "";
+      const txt = fmt.format(v) + suf; ctx.font = "600 11px Roboto, Arial, sans-serif";
       const larg = ctx.measureText(txt).width;
       if (empilhado) {
         const tam = horiz ? Math.abs(el.x - el.base) : Math.abs(el.base - el.y);
@@ -344,6 +380,17 @@ const Rotulos = { id:"rotulos", afterDatasetsDraw(chart){
   ctx.restore();
 }};
 Chart.register(Rotulos);
+
+// Linha horizontal de meta (ex.: SLA)
+const LinhaMeta = { id:"linhaMeta", afterDatasetsDraw(chart, _a, o){
+  if (!o || o.valor === undefined) return;
+  const y = chart.scales.y.getPixelForValue(o.valor), {left, right} = chart.chartArea, ctx = chart.ctx;
+  ctx.save(); ctx.strokeStyle = o.cor || "#EF4444"; ctx.lineWidth = 2.5; ctx.setLineDash(o.tracejado ? [6,4] : []);
+  ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
+  ctx.setLineDash([]); ctx.fillStyle = o.cor || "#EF4444"; ctx.font = "700 11px Roboto, Arial, sans-serif"; ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+  ctx.fillText(o.texto || "", right - 4, y - 4); ctx.restore();
+}};
+Chart.register(LinhaMeta);
 
 const dt = (s) => s ? new Date(s) : null;
 const dataBR = (s) => s ? s.slice(8,10)+"/"+s.slice(5,7)+"/"+s.slice(0,4)+" "+s.slice(11,16) : "";
@@ -557,7 +604,103 @@ function renderRec(){
   $("tabRInfo").textContent = ord.length>500 ? `mostrando os 500 mais recentes de ${fmt.format(ord.length)} (o CSV traz todos)` : `${fmt.format(ord.length)} notas`;
   $("tbodyR").innerHTML = ord.slice(0,500).map(r=>{const l=diasEntre(r.chegada,r.internalizada); return `<tr><td>${dataBR(r.chegada)}</td><td>${esc(r.id)}</td><td>${esc(r.nf)}</td><td>${esc(curto(r.fornecedor,40))}</td><td>${dataBR(r.emissao)}</td><td>${dataBR(r.registro)}</td><td>${dataBR(r.internalizada)}</td><td class="n">${fmt.format(r.volumes)}</td><td>${esc(r.status)}</td><td>${esc(r.responsavel)}</td><td class="n">${l===null?"":fmt1.format(l)}</td></tr>`;}).join("");
   window._linhasR = ord;
+  window._rowsRec = rows; renderSla(rows);
 }
+
+// ---------- SLA: horas úteis (seg-sex, 08h-18h) ----------
+const H_INI = 8, H_FIM = 18, SLA_HORAS = 24;   // 10 h úteis por dia · prazo de 24 h úteis
+function horasUteis(a, b){
+  a = new Date(a); b = new Date(b); if (!(b > a)) return 0;
+  let tot = 0; const d = new Date(a); d.setHours(0,0,0,0);
+  while (d <= b){
+    const dw = d.getDay();
+    if (dw >= 1 && dw <= 5){
+      const ini = new Date(d); ini.setHours(H_INI,0,0,0); const fim = new Date(d); fim.setHours(H_FIM,0,0,0);
+      const s0 = Math.max(+ini, +a), e0 = Math.min(+fim, +b); if (e0 > s0) tot += (e0 - s0) / 36e5;
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return tot;
+}
+function somarHorasUteis(a, h){
+  let t = new Date(a), resto = h * 36e5;
+  for (let i = 0; i < 500 && resto > 0; i++){
+    const dw = t.getDay(), ini = new Date(t), fim = new Date(t); ini.setHours(H_INI,0,0,0); fim.setHours(H_FIM,0,0,0);
+    if (dw >= 1 && dw <= 5 && t < fim){ const s0 = t < ini ? ini : t, disp = fim - s0; if (resto <= disp) return new Date(+s0 + resto); resto -= disp; }
+    t = new Date(t); t.setDate(t.getDate() + 1); t.setHours(0,0,0,0);
+  }
+  return t;
+}
+const isoLocal = (d) => { const p=(n)=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`; };
+function sla(r){
+  const agora = new Date();
+  const fim = r.internalizada ? new Date(r.internalizada) : agora;
+  const h = horasUteis(r.chegada, fim);
+  const limite = somarHorasUteis(r.chegada, SLA_HORAS);
+  let sit;
+  if (r.internalizada) sit = h <= SLA_HORAS ? "ok" : "fora";
+  else sit = h <= SLA_HORAS ? "aberto" : "atr";
+  return { horas: h, limite: isoLocal(limite), sit };
+}
+const SIT = { ok:["No prazo","b-ok"], fora:["Fora do prazo","b-ruim"], atr:["Em aberto · atrasada","b-alerta"], aberto:["Em aberto · no prazo","b-info"] };
+const fmtH = (h) => fmt1.format(h) + " h";
+let SLA_FILTRO = "";
+
+function renderSla(rows){
+  const info = rows.map(r => Object.assign({r}, sla(r)));
+  const cont = (k) => info.filter(x=>x.sit===k).length;
+  const intern = info.filter(x=>x.r.internalizada);
+  const ok = cont("ok"), fora = cont("fora"), atr = cont("atr"), ab = cont("aberto");
+  $("sOkPct").innerHTML = intern.length ? fmt1.format(ok/intern.length*100) + "<small>%</small>" : "–";
+  $("sOk").textContent = fmt.format(ok) + " de " + fmt.format(intern.length) + " internalizadas";
+  $("sFora").textContent = fmt.format(fora); $("sAbAtr").textContent = fmt.format(atr); $("sAbOk").textContent = fmt.format(ab);
+  const hoje = new Date().toISOString().slice(0,10);
+  $("sVence").textContent = fmt.format(info.filter(x=>x.sit==="aberto" && x.limite.slice(0,10)===hoje).length) + " vencem hoje";
+  const med = mediana(intern.map(x=>x.horas));
+  $("sMed").innerHTML = med===null ? "–" : fmt1.format(med) + "<small> h</small>";
+
+  // Gráfico por dia de chegada x fornecedor
+  const curtoForn = (f) => (f.split(/\s+/)[0] || f);
+  const dias = [...new Set(intern.map(x=>x.r.chegada.slice(0,10)))].sort();
+  const diasV = dias.slice(-20);
+  $("slaDiaInfo").textContent = dias.length > 20 ? "últimas 20 datas com chegada no período" : "";
+  const forns = [...new Set(intern.filter(x=>diasV.includes(x.r.chegada.slice(0,10))).map(x=>curtoForn(x.r.fornecedor)))]
+    .sort((a,b)=>intern.filter(x=>curtoForn(x.r.fornecedor)===b).length - intern.filter(x=>curtoForn(x.r.fornecedor)===a).length);
+  const PAL = ["#5B6BC0","#7FB3F5","#9C8B5A","#E05A55","#2E9E6B","#A78BFA","#F59E0B","#94A3B8"];
+  grafico("cSlaDia",{type:"bar",data:{labels:diasV.map(d=>d.slice(8,10)+"/"+d.slice(5,7)),
+      datasets:forns.map((f,i)=>({label:f,backgroundColor:PAL[i%PAL.length],borderRadius:3,maxBarThickness:22,skipNull:true,
+        data:diasV.map(d=>{ const a=intern.filter(x=>x.r.chegada.slice(0,10)===d && curtoForn(x.r.fornecedor)===f).map(x=>x.horas); return a.length? Math.round(a.reduce((s,v)=>s+v,0)/a.length) : null; })}))},
+    options:{layout:{padding:{top:22}},
+      plugins:{legend:{position:"bottom"},rotulos:{sufixo:"h"},linhaMeta:{valor:SLA_HORAS,texto:"SLA "+SLA_HORAS+"h",cor:"#EF4444"},
+        tooltip:{callbacks:{label:c=>c.raw===null?null:` ${c.dataset.label}: ${c.raw} h úteis (média)`}}},
+      scales:{y:{beginAtZero:true,suggestedMax:SLA_HORAS+5,grid:{color:css("--grid")},ticks:{callback:v=>v+"h"}},x:{grid:{display:false}}}}});
+
+  const meses = [...new Set(intern.map(x=>mesChave(x.r.chegada)))].sort();
+  const pct = meses.map(m => { const a = intern.filter(x=>mesChave(x.r.chegada)===m); return a.length ? r1(a.filter(x=>x.sit==="ok").length/a.length*100) : null; });
+  grafico("cSlaMes",{type:"bar",data:{labels:meses.map(mesRot),datasets:[{label:"% no prazo",data:pct,borderRadius:6,
+      backgroundColor:pct.map(v=>v===null?css("--sem"):v>=95?css("--saud"):v>=85?css("--marca"):css("--desc"))}]},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+fmt1.format(c.raw)+"% no prazo"}}},
+      scales:{y:{beginAtZero:true,max:100,grid:{color:css("--grid")},ticks:{callback:v=>v+"%"}},x:{grid:{display:false}}}}});
+  const faixas = [["até 10 h (1 dia)",0,10],["10 a 20 h (2 dias)",10,20],["20 a 24 h",20,SLA_HORAS+1e-6],["24 a 30 h",SLA_HORAS+1e-6,30],["30 a 50 h",30,50],["mais de 50 h",50,1e9]];
+  grafico("cSlaDist",{type:"bar",data:{labels:faixas.map(f=>f[0]),datasets:[{label:"Notas",data:faixas.map(([,a,b])=>intern.filter(x=>x.horas>=a&&x.horas<b).length),borderRadius:6,
+      backgroundColor:faixas.map(([,a])=>a<SLA_HORAS?css("--saud"):css("--desc"))}]},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:css("--grid")}},x:{grid:{display:false}}}}});
+
+  const esc = (v) => String(v??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  const ordem = {atr:0,fora:1,aberto:2,ok:3};
+  const lista = info.filter(x=>!SLA_FILTRO || x.sit===SLA_FILTRO).sort((a,b)=> SLA_FILTRO ? b.r.chegada.localeCompare(a.r.chegada) : (ordem[a.sit]-ordem[b.sit]) || b.r.chegada.localeCompare(a.r.chegada));
+  $("slaInfo").textContent = fmt.format(lista.length) + " notas" + (lista.length>500 ? " (mostrando 500; o CSV traz todas)" : "");
+  $("tbodyS").innerHTML = lista.slice(0,500).map(x=>`<tr><td><span class="badge ${SIT[x.sit][1]}">${SIT[x.sit][0]}</span></td><td>${dataBR(x.r.chegada)}</td><td>${dataBR(x.limite)}</td><td>${dataBR(x.r.internalizada)||"—"}</td><td class="n">${fmtH(x.horas)}</td><td class="n">${fmt1.format(x.horas/10)}</td><td>${esc(x.r.id)}</td><td>${esc(x.r.nf)}</td><td>${esc(curto(x.r.fornecedor,34))}</td></tr>`).join("");
+  window._linhasS = lista;
+}
+function baixarCSVSla(){
+  const cab=["Chegada","ORDER ID","Nota fiscal","Fornecedor","Prazo limite","Internalizada","Horas úteis","Dias úteis","Situação"];
+  const q=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const lin=(window._linhasS||[]).map(x=>[dataBR(x.r.chegada),x.r.id,x.r.nf,x.r.fornecedor,dataBR(x.limite),dataBR(x.r.internalizada),fmt1.format(x.horas),fmt1.format(x.horas/10),SIT[x.sit][0]].map(q).join(";"));
+  const blob=new Blob(["﻿"+[cab.map(q).join(";"),...lin].join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="sla_recebimento.csv"; a.click();
+}
+
 function baixarCSVRec(){
   const cab=["Chegada","ORDER ID","Nota fiscal","Fornecedor","Emissão","Envio XML","Registro","Internalizada","Volumes","Status","Responsável","PO","Tempo (dias)","Pendências"];
   const q=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;
@@ -587,7 +730,7 @@ async function carregar(forcar){
 const TITULOS = {geral:["Devoluções","Registros do AppSheet · visão geral do período"], motivos:["Motivos","Por que os produtos voltaram e para onde foram"],
   produtos:["Produtos","SKUs e famílias com mais devoluções"], operacao:["Operação","Produtividade da equipe e tempo de internalização"], registros:["Registros","Lista completa com exportação para CSV"],
   rgeral:["Recebimento","Notas recebidas no armazém · visão geral do período"], rforn:["Fornecedores","Volumes, notas e tempo por fornecedor"],
-  rtempo:["Tempos de recebimento","Quanto tempo cada etapa leva, da emissão à internalização"], rpend:["Pendências","Notas que ainda precisam de ação"], rreg:["Recebimentos","Lista completa com exportação para CSV"]};
+  rtempo:["Tempos de recebimento","Quanto tempo cada etapa leva, da emissão à internalização"], rsla:["Prazo de internalização (SLA)","24 horas úteis a partir da chegada · 10 h por dia útil (seg a sex, 08:00 às 18:00)"], rpend:["Pendências","Notas que ainda precisam de ação"], rreg:["Recebimentos","Lista completa com exportação para CSV"]};
 function ativarSecao(sec){
   SECAO = sec;
   document.querySelectorAll(".secoes button").forEach(b=>b.classList.toggle("on",b.dataset.s===sec));
@@ -612,6 +755,8 @@ $("limpar").onclick = () => {
   if (SECAO==="rec"){ ["gIni","gFim","gForn","gStatus","gResp"].forEach(id=>$(id).value=""); montarFiltrosRec(); renderRec(); return; }
   ["fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id=>$(id).value=""); $("fIni").value=""; $("fFim").value=""; montarFiltros(); render(); };
 $("csvR").onclick = baixarCSVRec;
+$("csvSla").onclick = baixarCSVSla;
+document.querySelectorAll("#slaSeg button").forEach(b=>b.onclick=()=>{ SLA_FILTRO=b.dataset.f; document.querySelectorAll("#slaSeg button").forEach(x=>x.classList.toggle("on",x===b)); renderSla(window._rowsRec||[]); });
 $("csv").onclick = baixarCSV;
 $("atualizar").onclick = () => carregar(true);
 function temaEscuro(){ const t = document.documentElement.dataset.theme; return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; }
