@@ -2,7 +2,8 @@
 // Variáveis de ambiente (Netlify > Site configuration > Environment variables):
 //   GOOGLE_SERVICE_ACCOUNT_JSON  -> conteúdo completo do arquivo .json da conta de serviço
 //   SHEET_ID                     -> ID ou link completo da planilha
-//   SHEET_TAB                    -> nome da aba (padrão: Página1)
+//   SHEET_TAB                    -> aba das devoluções (padrão: Página1)
+//   SHEET_TAB_RECEB              -> aba dos recebimentos (padrão: Recebimento)
 import crypto from "node:crypto";
 
 const CACHE_SEGUNDOS = 15 * 60; // a CDN do Netlify guarda a resposta por 15 min
@@ -109,6 +110,49 @@ export function converter(valores) {
   return out;
 }
 
+export function converterReceb(valores) {
+  const cab = (valores[0] || []).map((c) => texto(c));
+  const idx = (nome) => cab.findIndex((c) => c.toLowerCase() === nome.toLowerCase());
+  const col = {
+    id: idx("ORDER ID"), nf: idx("Nota fiscal"), forn: idx("Fornecedor"), emissao: idx("Data Emissão"),
+    chegada: idx("Data de chegada"), xml: idx("Envio XML"), registro: idx("Data Registro"),
+    internal: idx("Data Internalizada"), vol: idx("Volumes"), status: idx("Status do recebimento"),
+    resp: idx("Responsável recebimento"), po: idx("PO"),
+  };
+  if (col.id < 0 || col.chegada < 0) throw new Error("Aba de recebimento sem as colunas 'ORDER ID' e 'Data de chegada'.");
+  const g = (lin, k) => (col[k] < 0 ? "" : lin[col[k]]);
+  const out = [];
+  for (const lin of valores.slice(1)) {
+    const id = texto(g(lin, "id"));
+    const chegada = data(g(lin, "chegada"));
+    if (!id || !chegada) continue;
+    out.push({
+      id,
+      nf: texto(g(lin, "nf")).replace(/\.0+$/, ""),
+      fornecedor: texto(g(lin, "forn")).toUpperCase() || "NÃO INFORMADO",
+      emissao: data(g(lin, "emissao")),
+      chegada,
+      xml: data(g(lin, "xml")),
+      registro: data(g(lin, "registro")),
+      internalizada: data(g(lin, "internal")),
+      volumes: numero(g(lin, "vol")),
+      status: texto(g(lin, "status")) || "Sem status",
+      responsavel: texto(g(lin, "resp")) || "Não informado",
+      po: texto(g(lin, "po")),
+    });
+  }
+  return out;
+}
+
+async function lerAba(token, id, aba) {
+  const url =
+    `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(aba)}` +
+    `?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER`;
+  const r = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+  if (!r.ok) throw new Error(`Erro ao ler a aba "${aba}" (${r.status}): ${await r.text()}`);
+  return (await r.json()).values || [];
+}
+
 export default async () => {
   try {
     const sa = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || "{}");
@@ -117,15 +161,16 @@ export default async () => {
     const aba = process.env.SHEET_TAB || "Página1";
     if (!sa.private_key || !id) throw new Error("Configure GOOGLE_SERVICE_ACCOUNT_JSON e SHEET_ID no Netlify.");
 
+    const abaReceb = process.env.SHEET_TAB_RECEB || "Recebimento";
     const token = await tokenGoogle(sa);
-    const url =
-      `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(aba)}` +
-      `?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER`;
-    const r = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
-    if (!r.ok) throw new Error(`Erro ao ler a planilha (${r.status}): ${await r.text()}`);
-    const { values = [] } = await r.json();
+    const [dev, rec] = await Promise.allSettled([lerAba(token, id, aba), lerAba(token, id, abaReceb)]);
+    if (dev.status === "rejected") throw dev.reason;
+    let recebimentos = [], erroReceb = null;
+    if (rec.status === "fulfilled") {
+      try { recebimentos = converterReceb(rec.value); } catch (e) { erroReceb = String(e.message || e); }
+    } else erroReceb = String(rec.reason?.message || rec.reason);
 
-    const corpo = JSON.stringify({ atualizadoEm: new Date().toISOString(), registros: converter(values) });
+    const corpo = JSON.stringify({ atualizadoEm: new Date().toISOString(), registros: converter(dev.value), recebimentos, erroReceb });
     return new Response(corpo, {
       headers: {
         "content-type": "application/json; charset=utf-8",
