@@ -290,23 +290,23 @@
       <section class="pag" id="p-dsla">
         <div class="mini">
           <div class="k ok"><div><div class="l">Internalizadas no prazo</div><div class="v" id="dOkPct" style="color:var(--verde-txt)">–</div><div class="s" id="dOk">–</div></div></div>
-          <div class="k ruim"><div><div class="l">Fora do prazo</div><div class="v" id="dFora" style="color:var(--verm-txt)">–</div><div class="s">internalizadas após 48 h</div></div></div>
+          <div class="k ruim"><div><div class="l">Fora do prazo</div><div class="v" id="dFora" style="color:var(--verm-txt)">–</div><div class="s">internalizadas depois do prazo</div></div></div>
           <div class="k alerta"><div><div class="l">Em aberto · atrasadas</div><div class="v" id="dAbAtr" style="color:var(--marca)">–</div><div class="s">já passaram do prazo</div></div></div>
           <div class="k"><div><div class="l">Em aberto · no prazo</div><div class="v" id="dAbOk">–</div><div class="s" id="dVence">–</div></div></div>
           <div class="k"><div><div class="l">Tempo mediano</div><div class="v" id="dMed">–</div><div class="s" id="dSemXml">envio do XML → internalização</div></div></div>
         </div>
         <div class="grid">
-          <div class="card full"><div class="barra"><h3>Envio do XML × internalização por dia (SLA 48 h)</h3><span class="info2" id="dslaDiaInfo"></span></div>
-            <div class="sub">Devoluções internalizadas, pela data de envio do XML: quantas ficaram no prazo e quantas passaram de 48 h.</div>
+          <div class="card full"><div class="barra"><h3>Envio do XML × internalização por dia (SLA D+2 úteis)</h3><span class="info2" id="dslaDiaInfo"></span></div>
+            <div class="sub">Devoluções internalizadas, pela data de envio do XML: quantas ficaram no prazo (até 23:59 do 2º dia útil) e quantas passaram.</div>
             <div class="ch"><canvas id="cDSlaDia"></canvas></div></div>
-          <div class="card"><h3>% internalizado no prazo por mês</h3><div class="sub">Devoluções internalizadas em até 48 horas após o envio do XML.</div><div class="ch"><canvas id="cDSlaMes"></canvas></div></div>
-          <div class="card"><h3>Fora do prazo por transportadora</h3><div class="sub">% das devoluções internalizadas que passaram de 48 h.</div><div class="ch"><canvas id="cDSlaTransp"></canvas></div></div>
+          <div class="card"><h3>% internalizado no prazo por mês</h3><div class="sub">Devoluções internalizadas até 23:59 do 2º dia útil após o envio do XML.</div><div class="ch"><canvas id="cDSlaMes"></canvas></div></div>
+          <div class="card"><h3>Fora do prazo por transportadora</h3><div class="sub">% das devoluções internalizadas depois do prazo.</div><div class="ch"><canvas id="cDSlaTransp"></canvas></div></div>
           <div class="card full">
             <div class="barra"><h3>Tempo de cada devolução</h3><span class="info2" id="dslaInfo"></span><span class="sp"></span>
               <div class="seg" id="dslaSeg"><button data-f="" class="on">Todas</button><button data-f="fora">Fora do prazo</button><button data-f="atr">Em aberto atrasadas</button><button data-f="aberto">Em aberto no prazo</button><button data-f="ok">No prazo</button></div>
               <button class="btn" id="csvDSla">⬇ CSV</button></div>
-            <div class="sub">Regra: prazo de 48 horas a partir do envio do XML, contando só de segunda a sexta (sábado e domingo não contam). Ex.: XML na sexta às 15h vence na terça às 15h.</div>
-            <div class="tab"><table><thead><tr><th>Situação</th><th>Envio do XML</th><th>Prazo limite</th><th>Internalizada</th><th class="n">Horas</th><th class="n">Dias úteis</th><th>ID</th><th>NFe</th><th>SKU</th><th>Transportadora</th></tr></thead><tbody id="tbodyD"></tbody></table></div>
+            <div class="sub">Regra: o prazo vai até 23:59 do 2º dia útil depois do envio do XML (sábado e domingo não contam). Ex.: XML na terça às 08h vence quinta às 23:59; XML na sexta vence terça às 23:59.</div>
+            <div class="tab"><table><thead><tr><th>Situação</th><th>Envio do XML</th><th>Prazo limite</th><th>Internalizada</th><th class="n">Horas úteis</th><th class="n">Dias úteis</th><th>ID</th><th>NFe</th><th>SKU</th><th>Transportadora</th></tr></thead><tbody id="tbodyD"></tbody></table></div>
           </div>
         </div>
       </section>
@@ -658,7 +658,6 @@ function renderRec(){
 
 // ---------- SLA: horas úteis (seg-sex, 08h-18h) ----------
 const H_INI = 8, H_FIM = 18, SLA_HORAS = 24;   // recebimento: 24 h úteis (10 h por dia útil)
-const SLA_DEV_HORAS = 48;                       // devolução: 48 h contando só seg a sex (24 h por dia) · fim de semana pausa
 function horasDiasUteis(a, b){
   a = new Date(a); b = new Date(b); if (!(b > a)) return 0;
   let tot = 0; const d = new Date(a); d.setHours(0,0,0,0);
@@ -678,12 +677,23 @@ function somarHorasDiasUteis(a, h){
   }
   return t;
 }
-function slaCorrido(r, inicio, prazo){
+// Prazo da devolução: até 23:59 do 2º dia útil depois do envio do XML (ex.: terça 08h → quinta 23:59)
+const SLA_DEV_DIAS = 2;
+function fimDiaUtil(inicio, n){
+  const d = new Date(inicio); d.setHours(0,0,0,0);
+  let c = 0; while (c < n){ d.setDate(d.getDate() + 1); const dw = d.getDay(); if (dw >= 1 && dw <= 5) c++; }
+  d.setHours(23,59,59,0); return d;
+}
+function diasUteisEntre(a, b){   // quantos dias úteis depois do dia do envio até o dia da internalização (D+n)
+  const d = new Date(a); d.setHours(0,0,0,0); const fim = new Date(b); fim.setHours(0,0,0,0);
+  let n = 0; while (d < fim){ d.setDate(d.getDate() + 1); const dw = d.getDay(); if (dw >= 1 && dw <= 5) n++; }
+  return n;
+}
+function slaCorrido(r, inicio){
   const fim = r.internalizada ? new Date(r.internalizada) : new Date();
-  const h = horasDiasUteis(inicio, fim);
-  const limite = somarHorasDiasUteis(inicio, prazo);
-  const sit = r.internalizada ? (h <= prazo ? "ok" : "fora") : (h <= prazo ? "aberto" : "atr");
-  return { horas: h, limite: isoLocal(limite), sit };
+  const limite = fimDiaUtil(inicio, SLA_DEV_DIAS);
+  const sit = r.internalizada ? (fim <= limite ? "ok" : "fora") : (fim <= limite ? "aberto" : "atr");
+  return { horas: horasDiasUteis(inicio, fim), dias: diasUteisEntre(inicio, fim), limite: isoLocal(limite).slice(0,11) + "23:59:00", sit };
 }
 function horasUteis(a, b){
   a = new Date(a); b = new Date(b); if (!(b > a)) return 0;
@@ -793,7 +803,7 @@ function baixarCSVSla(){
 let DSLA_FILTRO = "";
 function renderDSla(rows){
   const comXml = rows.filter(r=>r.xml);
-  const info = comXml.map(r => Object.assign({r}, slaCorrido(r, r.xml, SLA_DEV_HORAS)));
+  const info = comXml.map(r => Object.assign({r}, slaCorrido(r, r.xml)));
   const cont = (k) => info.filter(x=>x.sit===k).length;
   const intern = info.filter(x=>x.r.internalizada);
   const ok = cont("ok"), fora = cont("fora");
@@ -835,13 +845,13 @@ function renderDSla(rows){
   const ordem = {atr:0,fora:1,aberto:2,ok:3};
   const lista = info.filter(x=>!DSLA_FILTRO || x.sit===DSLA_FILTRO).sort((a,b)=> DSLA_FILTRO ? b.r.xml.localeCompare(a.r.xml) : (ordem[a.sit]-ordem[b.sit]) || b.r.xml.localeCompare(a.r.xml));
   $("dslaInfo").textContent = fmt.format(lista.length) + " registros" + (lista.length>500 ? " (mostrando 500; o CSV traz todos)" : "");
-  $("tbodyD").innerHTML = lista.slice(0,500).map(x=>`<tr><td><span class="badge ${SIT[x.sit][1]}">${SIT[x.sit][0]}</span></td><td>${dataBR(x.r.xml)}</td><td>${dataBR(x.limite)}</td><td>${dataBR(x.r.internalizada)||"—"}</td><td class="n">${fmtH(x.horas)}</td><td class="n">${fmt1.format(x.horas/24)}</td><td>${esc(x.r.id)}</td><td>${esc(x.r.nfe)}</td><td>${esc(x.r.item)}</td><td>${esc(x.r.transportadora)}</td></tr>`).join("");
+  $("tbodyD").innerHTML = lista.slice(0,500).map(x=>`<tr><td><span class="badge ${SIT[x.sit][1]}">${SIT[x.sit][0]}</span></td><td>${dataBR(x.r.xml)}</td><td>${dataBR(x.limite)}</td><td>${dataBR(x.r.internalizada)||"—"}</td><td class="n">${fmtH(x.horas)}</td><td class="n">D+${x.dias}</td><td>${esc(x.r.id)}</td><td>${esc(x.r.nfe)}</td><td>${esc(x.r.item)}</td><td>${esc(x.r.transportadora)}</td></tr>`).join("");
   window._linhasD = lista;
 }
 function baixarCSVDSla(){
-  const cab=["Envio do XML","ID","NFe","SKU","Transportadora","Prazo limite","Internalizada","Horas","Dias úteis","Situação"];
+  const cab=["Envio do XML","ID","NFe","SKU","Transportadora","Prazo limite","Internalizada","Horas úteis","Dias úteis","Situação"];
   const q=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;
-  const lin=(window._linhasD||[]).map(x=>[dataBR(x.r.xml),x.r.id,x.r.nfe,x.r.item,x.r.transportadora,dataBR(x.limite),dataBR(x.r.internalizada),fmt1.format(x.horas),fmt1.format(x.horas/24),SIT[x.sit][0]].map(q).join(";"));
+  const lin=(window._linhasD||[]).map(x=>[dataBR(x.r.xml),x.r.id,x.r.nfe,x.r.item,x.r.transportadora,dataBR(x.limite),dataBR(x.r.internalizada),fmt1.format(x.horas),"D+"+x.dias,SIT[x.sit][0]].map(q).join(";"));
   const blob=new Blob(["﻿"+[cab.map(q).join(";"),...lin].join("\r\n")],{type:"text/csv;charset=utf-8"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="sla_devolucoes.csv"; a.click();
 }
@@ -875,7 +885,7 @@ async function carregar(forcar){
 }
 
 const TITULOS = {geral:["Devoluções","Registros do AppSheet · visão geral do período"], motivos:["Motivos","Por que os produtos voltaram e para onde foram"],
-  produtos:["Produtos","SKUs e famílias com mais devoluções"], operacao:["Operação","Produtividade da equipe e tempo de internalização"], dsla:["Prazo de internalização (SLA)","48 horas a partir do envio do XML · só de segunda a sexta (fim de semana não conta)"], registros:["Registros","Lista completa com exportação para CSV"],
+  produtos:["Produtos","SKUs e famílias com mais devoluções"], operacao:["Operação","Produtividade da equipe e tempo de internalização"], dsla:["Prazo de internalização (SLA)","Até 23:59 do 2º dia útil depois do envio do XML (D+2 úteis · sábado e domingo não contam)"], registros:["Registros","Lista completa com exportação para CSV"],
   rgeral:["Recebimento","Notas recebidas no armazém · visão geral do período"], rforn:["Fornecedores","Volumes, notas e tempo por fornecedor"],
   rtempo:["Tempos de recebimento","Quanto tempo cada etapa leva, da emissão à internalização"], rsla:["Prazo de internalização (SLA)","24 horas úteis a partir da chegada · 10 h por dia útil (seg a sex, 08:00 às 18:00)"], rpend:["Pendências","Notas que ainda precisam de ação"], rreg:["Recebimentos","Lista completa com exportação para CSV"]};
 function ativarSecao(sec){
