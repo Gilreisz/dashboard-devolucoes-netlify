@@ -118,7 +118,7 @@
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--raio);padding:20px 22px;min-width:0;box-shadow:var(--sombra)}
   .card h3{font-size:17px;font-weight:700;margin:0}
   .card .sub{font-size:13px;color:var(--sub);margin:4px 0 12px}
-  .ch{position:relative;height:340px} .ch.alto{height:480px}
+  .ch{position:relative;height:340px} .rolagem{overflow-x:auto;overflow-y:hidden} .ch.alto{height:480px}
   .pag{display:none} .pag.on{display:block}
   table{width:100%;border-collapse:collapse;font-size:13px}
   th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
@@ -301,10 +301,9 @@
           <div class="k"><div><div class="l">Tempo útil mediano</div><div class="v" id="sMed">–</div><div class="s">chegada → internalização</div></div></div>
         </div>
         <div class="grid">
-          <div class="card full"><div class="barra"><h3>Data de chegada × internalização (SLA 24 h úteis)</h3><span class="info2" id="slaDiaInfo"></span><span class="sp"></span>
-              <div class="seg" id="slaModo"><button data-m="max" class="on">Maior tempo</button><button data-m="media">Média</button></div></div>
-            <div class="sub" id="slaDiaSub"></div>
-            <div class="ch"><canvas id="cSlaDia"></canvas></div></div>
+          <div class="card full"><div class="barra"><h3>Data de chegada × internalização (SLA 24 h úteis)</h3><span class="info2" id="slaDiaInfo"></span></div>
+            <div class="sub">Cada barra é uma nota: tempo em horas úteis da chegada até a internalização, agrupado por data de chegada. Linha vermelha = prazo de 24 h úteis. Contorno vermelho = fora do prazo · barra clara = ainda em aberto.</div>
+            <div class="rolagem"><div class="ch" id="slaDiaLarg"><canvas id="cSlaDia"></canvas></div></div></div>
           <div class="card"><h3>% internalizado no prazo por mês</h3><div class="sub">Notas internalizadas em até 24 horas úteis.</div><div class="ch"><canvas id="cSlaMes"></canvas></div></div>
           <div class="card"><h3>Tempo útil até a internalização</h3><div class="sub">Notas por faixa de horas úteis (10 h = 1 dia útil).</div><div class="ch"><canvas id="cSlaDist"></canvas></div></div>
           <div class="card full">
@@ -648,7 +647,7 @@ function sla(r){
 }
 const SIT = { ok:["No prazo","b-ok"], fora:["Fora do prazo","b-ruim"], atr:["Em aberto · atrasada","b-alerta"], aberto:["Em aberto · no prazo","b-info"] };
 const fmtH = (h) => fmt1.format(h) + " h";
-let SLA_FILTRO = "", SLA_MODO = "max";
+let SLA_FILTRO = "";
 
 function renderSla(rows){
   const info = rows.map(r => Object.assign({r}, sla(r)));
@@ -663,27 +662,38 @@ function renderSla(rows){
   const med = mediana(intern.map(x=>x.horas));
   $("sMed").innerHTML = med===null ? "–" : fmt1.format(med) + "<small> h</small>";
 
-  // Gráfico por dia de chegada x fornecedor
+  // Gráfico: cada nota recebida, agrupada por data de chegada
   const curtoForn = (f) => (f.split(/\s+/)[0] || f);
-  const dias = [...new Set(intern.map(x=>x.r.chegada.slice(0,10)))].sort();
-  const diasV = dias.slice(-20);
-  $("slaDiaInfo").textContent = dias.length > 20 ? "últimas 20 datas com chegada no período" : "";
-  const forns = [...new Set(intern.filter(x=>diasV.includes(x.r.chegada.slice(0,10))).map(x=>curtoForn(x.r.fornecedor)))]
-    .sort((a,b)=>intern.filter(x=>curtoForn(x.r.fornecedor)===b).length - intern.filter(x=>curtoForn(x.r.fornecedor)===a).length);
-  $("slaDiaSub").textContent = (SLA_MODO==="max" ? "Maior tempo em horas úteis (nota mais demorada)" : "Tempo médio em horas úteis") + ", por data de chegada e fornecedor. Linha vermelha = prazo de 24 h úteis (10 h por dia útil). Contorno vermelho = tem nota fora do prazo.";
+  const todosDias = [...new Set(info.map(x=>x.r.chegada.slice(0,10)))].sort();
+  const diasV = todosDias.slice(-15);
+  let notas = info.filter(x=>diasV.includes(x.r.chegada.slice(0,10))).sort((p,q)=>p.r.chegada.localeCompare(q.r.chegada));
+  const cortou = notas.length > 80; if (cortou) notas = notas.slice(-80);
+  $("slaDiaInfo").textContent = fmt.format(notas.length) + " notas" + (todosDias.length > 15 || cortou ? " · últimos " + new Set(notas.map(x=>x.r.chegada.slice(0,10))).size + " dias com chegada" : "");
+  const forns = [...new Set(notas.map(x=>curtoForn(x.r.fornecedor)))]
+    .sort((p,q)=>notas.filter(x=>curtoForn(x.r.fornecedor)===q).length - notas.filter(x=>curtoForn(x.r.fornecedor)===p).length);
   const PAL = ["#5B6BC0","#7FB3F5","#9C8B5A","#14B8A6","#2E9E6B","#A78BFA","#F59E0B","#94A3B8"];
-  grafico("cSlaDia",{type:"bar",data:{labels:diasV.map(d=>d.slice(8,10)+"/"+d.slice(5,7)),
-      datasets:forns.map((f,i)=>({label:f,backgroundColor:PAL[i%PAL.length],borderRadius:3,maxBarThickness:22,skipNull:true,
-        grupos:diasV.map(d=>intern.filter(x=>x.r.chegada.slice(0,10)===d && curtoForn(x.r.fornecedor)===f)),
-        data:diasV.map(d=>{ const a=intern.filter(x=>x.r.chegada.slice(0,10)===d && curtoForn(x.r.fornecedor)===f).map(x=>x.horas); if(!a.length) return null;
-          return SLA_MODO==="max" ? r1(Math.max(...a)) : r1(a.reduce((s,v)=>s+v,0)/a.length); }),
+  const corF = (f) => PAL[forns.indexOf(f) % PAL.length];
+  const diaRot = (d) => d.slice(8,10)+"/"+d.slice(5,7);
+  const rot = notas.map((x,i)=>{ const d=x.r.chegada.slice(0,10); const novo = i===0 || notas[i-1].r.chegada.slice(0,10)!==d;
+    return ["NF " + (x.r.nf || x.r.id), novo ? diaRot(d) : ""]; });
+  $("slaDiaLarg").style.minWidth = Math.max(notas.length * 46, 300) + "px";
+  const SepDias = { id:"sepDias", beforeDatasetsDraw(ch){ const xs=ch.scales.x, ya=ch.chartArea, c=ch.ctx; c.save(); c.strokeStyle=css("--line"); c.setLineDash([4,4]);
+    notas.forEach((x,i)=>{ if(i && notas[i-1].r.chegada.slice(0,10)!==x.r.chegada.slice(0,10)){ const px=(xs.getPixelForValue(i-1)+xs.getPixelForValue(i))/2; c.beginPath(); c.moveTo(px,ya.top); c.lineTo(px,ya.bottom); c.stroke(); } });
+    c.restore(); } };
+  grafico("cSlaDia",{type:"bar",plugins:[SepDias],data:{labels:rot,
+      datasets:forns.map(f=>({label:f,skipNull:true,borderRadius:3,maxBarThickness:30,
+        data:notas.map(x=>curtoForn(x.r.fornecedor)===f ? r1(x.horas) : null),
+        backgroundColor:notas.map(x=>x.r.internalizada ? corF(f) : corF(f)+"66"),
         borderColor:"#EF4444",
-        borderWidth:diasV.map(d=>intern.some(x=>x.r.chegada.slice(0,10)===d && curtoForn(x.r.fornecedor)===f && x.sit==="fora")?2:0)}))},
-    options:{layout:{padding:{top:22}},
+        borderWidth:notas.map(x=>(x.sit==="fora"||x.sit==="atr")?2:0)}))},
+    options:{layout:{padding:{top:22}},datasets:{bar:{grouped:false}},
       plugins:{legend:{position:"bottom"},rotulos:{sufixo:"h",decimal:true},linhaMeta:{valor:SLA_HORAS,texto:"SLA "+SLA_HORAS+"h",cor:"#EF4444"},
-        tooltip:{callbacks:{label:c=>{ if(c.raw===null) return null; const g=c.dataset.grupos[c.dataIndex]; const nf=g.filter(x=>x.sit==="fora").length;
-          return [` ${c.dataset.label}: ${fmt1.format(c.raw)} h úteis (${SLA_MODO==="max"?"maior tempo":"média"})`, ` ${g.length} nota${g.length>1?"s":""}`+(nf?` · ${nf} fora do prazo`:" · todas no prazo")]; }}}},
-      scales:{y:{beginAtZero:true,suggestedMax:SLA_HORAS+5,grid:{color:css("--grid")},ticks:{callback:v=>v+"h"}},x:{grid:{display:false}}}}});
+        tooltip:{callbacks:{title:c=>{ const x=notas[c[0].dataIndex]; return "NF " + (x.r.nf||"—") + " · " + x.r.fornecedor; },
+          label:c=>{ if(c.raw===null) return null; const x=notas[c.dataIndex];
+            return [" Chegada: " + dataBR(x.r.chegada), " Internalizada: " + (dataBR(x.r.internalizada) || "em aberto"),
+              " " + fmt1.format(c.raw) + " h úteis" + (x.r.internalizada ? "" : " até agora"), " " + SIT[x.sit][0]]; }}}},
+      scales:{y:{beginAtZero:true,suggestedMax:SLA_HORAS+5,grid:{color:css("--grid")},ticks:{callback:v=>v+"h"}},
+        x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:0,font:{size:11}}}}}});
 
   const meses = [...new Set(intern.map(x=>mesChave(x.r.chegada)))].sort();
   const pct = meses.map(m => { const a = intern.filter(x=>mesChave(x.r.chegada)===m); return a.length ? r1(a.filter(x=>x.sit==="ok").length/a.length*100) : null; });
@@ -766,7 +776,6 @@ $("limpar").onclick = () => {
   ["fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id=>$(id).value=""); $("fIni").value=""; $("fFim").value=""; montarFiltros(); render(); };
 $("csvR").onclick = baixarCSVRec;
 $("csvSla").onclick = baixarCSVSla;
-document.querySelectorAll("#slaModo button").forEach(b=>b.onclick=()=>{ SLA_MODO=b.dataset.m; document.querySelectorAll("#slaModo button").forEach(x=>x.classList.toggle("on",x===b)); renderSla(window._rowsRec||[]); });
 document.querySelectorAll("#slaSeg button").forEach(b=>b.onclick=()=>{ SLA_FILTRO=b.dataset.f; document.querySelectorAll("#slaSeg button").forEach(x=>x.classList.toggle("on",x===b)); renderSla(window._rowsRec||[]); });
 $("csv").onclick = baixarCSV;
 $("atualizar").onclick = () => carregar(true);
