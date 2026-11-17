@@ -83,8 +83,8 @@
   .hero .btn:hover{background:rgba(255,255,255,.16)}
   .menu-btn{display:none}
   [hidden]{display:none!important}
-  .secoes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:3px;background:var(--campo);border:1px solid var(--line);border-radius:12px;padding:4px;margin:0 2px 12px}
-  .secoes button{display:flex;align-items:center;justify-content:center;gap:5px;border:0;background:none;color:var(--sub);padding:9px 4px;border-radius:9px;font-size:12.5px;min-width:0;white-space:nowrap;font-weight:600;transition:background .2s,color .2s}
+  .secoes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;background:var(--campo);border:1px solid var(--line);border-radius:12px;padding:4px;margin:0 2px 12px}
+  .secoes button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;background:none;color:var(--sub);padding:8px 2px;border-radius:9px;font-size:12px;min-width:0;white-space:nowrap;font-weight:600;transition:background .2s,color .2s}
   .secoes button svg{width:14px;height:14px;flex:none}
   .secoes button.on{background:var(--card2);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,.25)}
   .mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:16px}
@@ -175,6 +175,7 @@
     <div class="secoes">
       <button data-s="dev" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Devolução</button>
       <button data-s="rec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Recebimento</button>
+      <button data-s="inv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 12h18M3 17h18"/><path d="M8 4v16"/></svg>Inventário</button>
     </div>
     <nav data-sec="dev">
       <button data-p="geral" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Visão geral</button>
@@ -193,6 +194,12 @@
       <button data-p="rreg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Registros</button>
     </nav>
 
+    <nav data-sec="inv" hidden>
+      <button data-p="igeral" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Visão geral</button>
+      <button data-p="iacur"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Acuracidade</button>
+      <button data-p="idiv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>Divergências</button>
+      <button data-p="ireg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Contagens</button>
+    </nav>
     <div class="sec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"/></svg>Filtros</div>
     <div class="campo" data-sec="dev">
       <label for="fIni">Chegada de</label><input type="date" id="fIni">
@@ -209,6 +216,13 @@
       <label for="gForn">Fornecedor</label><select id="gForn"></select>
       <label for="gStatus">Status do recebimento</label><select id="gStatus"></select>
       <label for="gResp">Responsável</label><select id="gResp"></select>
+    </div>
+    <div class="campo" data-sec="inv" hidden>
+      <label for="iIni">Contagem de</label><input type="date" id="iIni">
+      <label for="iFim">até</label><input type="date" id="iFim">
+      <label for="iRua">Rua</label><select id="iRua"></select>
+      <label for="iSit">Situação</label><select id="iSit"><option value="">Todas</option><option value="1">Certas</option><option value="0">Divergentes</option></select>
+      <label for="iCont" id="iContL">Contador</label><select id="iCont"></select>
     </div>
     <div class="side-acoes">
       <button class="btn" id="limpar">Limpar filtros</button>
@@ -262,6 +276,15 @@
         <div class="k"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg></div><div><div class="l">Com pendência</div><div class="v" id="kRPend" style="color:var(--verm-txt)">–</div><div class="s">notas a resolver</div></div></div>
       </div>
       <div class="pend" id="kRAviso"></div>
+     </div>
+     <div data-sec="inv" hidden>
+      <div class="kpis">
+        <div class="k"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.6-7-11a7 7 0 0 1 14 0c0 5.4-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div><div><div class="l">Posições contadas</div><div class="v" id="kIPos">–</div><div class="s" id="kIPosS">no período</div></div></div>
+        <div class="k"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg></div><div><div class="l">SKUs contados</div><div class="v" id="kISku">–</div><div class="s" id="kISkuS">–</div></div></div>
+        <div class="k"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div><div><div class="l">Acuracidade geral</div><div class="v" id="kIAcur" style="color:var(--verde-txt)">–</div><div class="s" id="kIAcurS">posições certas</div></div></div>
+        <div class="k"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div><div><div class="l">Acuracidade do dia</div><div class="v" id="kIDia">–</div><div class="s" id="kIDiaS">–</div></div></div>
+        <div class="k"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg></div><div><div class="l">Divergências</div><div class="v" id="kIDiv" style="color:var(--verm-txt)">–</div><div class="s">posições com erro</div></div></div>
+      </div>
      </div>
 
       <section class="pag on" id="p-geral"><div class="grid">
@@ -318,6 +341,31 @@
         </tr></thead><tbody id="tbody"></tbody></table></div>
       </div></section>
       <div class="erro" id="recMsg" hidden></div>
+      <div class="erro" id="invMsg" hidden></div>
+
+      <section class="pag" id="p-igeral"><div class="grid">
+        <div class="card full"><div class="barra"><h3>Posições contadas por dia</h3><span class="info2" id="iDiaInfo"></span></div><div class="sub">Cada contagem de posição, separada entre certa e divergente (ACUR. POS.).</div><div class="ch"><canvas id="cIDia"></canvas></div></div>
+        <div class="card full"><h3>Acuracidade por dia</h3><div class="sub">% de posições certas em cada dia de contagem.</div><div class="ch"><canvas id="cIAcurDia"></canvas></div></div>
+        <div class="card"><h3>SKUs contados por dia</h3><div class="sub">Contagens com produto (posições vazias não entram).</div><div class="ch"><canvas id="cISkuDia"></canvas></div></div>
+        <div class="card"><h3>Posições por rua</h3><div class="sub">Quantas posições foram contadas em cada rua.</div><div class="ch"><canvas id="cIRuaPos"></canvas></div></div>
+      </div></section>
+
+      <section class="pag" id="p-iacur"><div class="grid">
+        <div class="card full"><h3>Acuracidade por critério</h3><div class="sub">% de contagens certas em cada critério: SKU, lote (batch), quantidade e posição (todos certos).</div><div class="ch"><canvas id="cITipo"></canvas></div></div>
+        <div class="card full"><h3>Acuracidade por critério e dia</h3><div class="sub">Evolução diária de cada critério.</div><div class="ch"><canvas id="cITipoDia"></canvas></div></div>
+        <div class="card full"><h3>Acuracidade por rua</h3><div class="sub">% de posições certas em cada rua.</div><div class="ch"><canvas id="cIRuaAcur"></canvas></div></div>
+      </div></section>
+
+      <section class="pag" id="p-idiv"><div class="grid">
+        <div class="card"><h3>Itens com mais divergências</h3><div class="sub">SKUs com mais posições divergentes.</div><div class="ch alto"><canvas id="cIDivSku"></canvas></div></div>
+        <div class="card"><h3>Ruas com mais divergências</h3><div class="sub">Posições divergentes por rua (passe o mouse para ver o %).</div><div class="ch alto"><canvas id="cIDivRua"></canvas></div></div>
+        <div class="card full"><h3>Tipo de divergência</h3><div class="sub">Uma posição pode ter mais de um tipo de erro.</div><div class="ch"><canvas id="cIDivTipo"></canvas></div></div>
+      </div></section>
+
+      <section class="pag" id="p-ireg"><div class="card" style="margin-top:16px">
+        <div class="barra"><h3>Contagens</h3><span class="info2" id="iTabInfo"></span><span class="sp"></span><button class="btn" id="csvI">⬇ Baixar CSV</button></div>
+        <div class="tab"><table><thead><tr><th>Situação</th><th>Data</th><th>Posição</th><th>Rua</th><th>SKU contado</th><th>SKU sistema</th><th>Lote contado</th><th>Lote sistema</th><th class="n">Qtd contada</th><th class="n">Qtd sistema</th><th>Erro em</th></tr></thead><tbody id="tbodyI"></tbody></table></div>
+      </div></section>
 
       <section class="pag" id="p-rgeral"><div class="grid">
         <div class="card full"><h3>Volumes recebidos por mês</h3><div class="sub">Soma dos volumes pela data de chegada.</div><div class="ch"><canvas id="cRMes"></canvas></div></div>
@@ -395,6 +443,7 @@ Chart.defaults.plugins.legend.labels.boxWidth = 12;
 
 // Rótulos com os valores dentro das barras / fatias / pontos
 const Rotulos = { id:"rotulos", afterDatasetsDraw(chart){
+  if (chart.options.plugins.rotulos && chart.options.plugins.rotulos.desligar) return;
   const ctx = chart.ctx, tipo = chart.config.type, horiz = chart.options.indexAxis === "y";
   const empilhado = !!(chart.options.scales && chart.options.scales.x && chart.options.scales.x.stacked);
   ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -856,6 +905,117 @@ function baixarCSVDSla(){
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="sla_devolucoes.csv"; a.click();
 }
 
+// ================= INVENTÁRIO =================
+let DADOS_INV = [], ERRO_INV = null;
+const dataInvBR = (s) => s ? s.slice(8,10)+"/"+s.slice(5,7) : "";
+function montarFiltrosInv(){
+  const uniq = (k) => [...new Set(DADOS_INV.map(r=>r[k]))].filter(Boolean).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+  preencherSelect($("iRua"), uniq("rua"));
+  const cont = uniq("contador"); preencherSelect($("iCont"), cont); $("iCont").hidden = $("iContL").hidden = !cont.length;
+  const d = DADOS_INV.map(r=>r.data).sort();
+  if (d.length && !$("iIni").value) $("iIni").value = d[0].slice(0,10);
+  if (d.length && !$("iFim").value) $("iFim").value = d[d.length-1].slice(0,10);
+}
+function filtradosInv(){
+  const ini=$("iIni").value, fim=$("iFim").value, rua=$("iRua").value, sit=$("iSit").value, cont=$("iCont").value;
+  return DADOS_INV.filter(r => (!ini||r.data.slice(0,10)>=ini) && (!fim||r.data.slice(0,10)<=fim) && (!rua||r.rua===rua) && (sit===""||String(r.aP)===sit) && (!cont||r.contador===cont));
+}
+const pctI = (a) => a.length ? a.filter(r=>r.aP===1).length / a.length * 100 : null;
+const corPct = (v) => v===null ? css("--sem") : v>=98 ? css("--saud") : v>=95 ? css("--marca") : css("--desc");
+function errosDe(r){ const e=[]; if(r.aS===0) e.push("SKU"); if(r.aB===0) e.push("Lote"); if(r.aQ===0) e.push("Quantidade"); if(!e.length && r.aP===0) e.push("Posição"); return e; }
+const skuDe = (r) => r.skuT || r.prod || "";
+
+function renderInv(){
+  const vazio = ERRO_INV || !DADOS_INV.length;
+  $("invMsg").hidden = !(SECAO==="inv" && vazio);
+  if (vazio){ $("invMsg").textContent = "Não consegui carregar a planilha de inventário.\n\n" + (ERRO_INV || "A aba não retornou registros."); return; }
+  const rows = filtradosInv();
+  const comSku = rows.filter(r=>r.prod);
+  const certas = rows.filter(r=>r.aP===1).length, div = rows.length - certas;
+  contar("kIPos", rows.length, v=>fmt.format(Math.round(v)));
+  $("kIPosS").textContent = fmt.format(new Set(rows.map(r=>r.pos)).size) + " posições diferentes";
+  contar("kISku", comSku.length, v=>fmt.format(Math.round(v)));
+  $("kISkuS").textContent = fmt.format(new Set(comSku.map(skuDe)).size) + " SKUs diferentes · " + fmt.format(comSku.reduce((s,r)=>s+r.qtd,0)) + " un.";
+  const ag = pctI(rows);
+  contar("kIAcur", ag, v=>fmt1.format(v)+"<small>%</small>");
+  $("kIAcurS").textContent = fmt.format(certas) + " de " + fmt.format(rows.length) + " posições certas";
+  const dias = [...new Set(rows.map(r=>r.data.slice(0,10)))].sort();
+  const ult = dias[dias.length-1];
+  const rUlt = rows.filter(r=>r.data.slice(0,10)===ult);
+  const ad = pctI(rUlt);
+  $("kIDia").innerHTML = ad===null ? "–" : fmt1.format(ad)+"<small>%</small>"; $("kIDia").style.color = ad===null ? "" : (ad>=98 ? "var(--verde-txt)" : ad>=95 ? "var(--marca)" : "var(--verm-txt)");
+  $("kIDiaS").textContent = ult ? dataBR(ult).slice(0,10) + " · " + fmt.format(rUlt.length) + " posições" : "–";
+  $("kIDiv").textContent = fmt.format(div);
+
+  // por dia
+  const dv = dias.slice(-30);
+  $("iDiaInfo").textContent = dias.length > 30 ? "últimos 30 dias com contagem" : "";
+  const doDia = (d) => rows.filter(r=>r.data.slice(0,10)===d);
+  grafico("cIDia",{type:"bar",data:{labels:dv.map(dataInvBR),datasets:[
+      {label:"Certas",data:dv.map(d=>doDia(d).filter(r=>r.aP===1).length),backgroundColor:css("--saud"),borderRadius:2},
+      {label:"Divergentes",data:dv.map(d=>doDia(d).filter(r=>r.aP!==1).length),backgroundColor:"#EF4444",borderRadius:2}]},
+    options:{plugins:{legend:{position:"bottom"},tooltip:{mode:"index",callbacks:{footer:c=>{ const t=c.reduce((s,x)=>s+x.raw,0); return "Total: "+fmt.format(t)+" posições"; }}}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:css("--grid")}}}}});
+  const accDia = dv.map(d=>r1(pctI(doDia(d))));
+  const minAcc = Math.min(...accDia.filter(v=>v!==null), 100);
+  grafico("cIAcurDia",{type:"line",data:{labels:dv.map(dataInvBR),datasets:[{label:"Acuracidade",data:accDia,borderColor:css("--marca2"),backgroundColor:css("--marca2")+"22",fill:true,tension:.25,pointRadius:4,pointBackgroundColor:accDia.map(corPct)}]},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+fmt1.format(c.raw)+"% certas · "+fmt.format(doDia(dv[c.dataIndex]).length)+" posições"}}},
+      scales:{y:{suggestedMin:Math.max(0,Math.floor(minAcc/5)*5-5),max:100,grid:{color:css("--grid")},ticks:{callback:v=>v+"%"}},x:{grid:{display:false}}}}});
+  grafico("cISkuDia",{type:"bar",data:{labels:dv.map(dataInvBR),datasets:[{label:"SKUs contados",data:dv.map(d=>doDia(d).filter(r=>r.prod).length),backgroundColor:css("--marca2"),borderRadius:4}]},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:css("--grid")}},x:{grid:{display:false}}}}});
+  const ruas = [...new Set(rows.map(r=>r.rua))].sort();
+  const daRua = (u) => rows.filter(r=>r.rua===u);
+  grafico("cIRuaPos",{type:"bar",data:{labels:ruas.map(u=>"Rua "+u),datasets:[{label:"Posições",data:ruas.map(u=>daRua(u).length),backgroundColor:css("--marca2"),borderRadius:4}]},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:css("--grid")}},x:{grid:{display:false}}}}});
+
+  // acuracidade por critério
+  const crit = [["SKU","aS"],["Lote (batch)","aB"],["Quantidade","aQ"],["Posição","aP"]];
+  const pc = (a,k) => { const v=a.filter(r=>r[k]!==null); return v.length ? r1(v.filter(r=>r[k]===1).length/v.length*100) : null; };
+  const vc = crit.map(([,k])=>pc(rows,k));
+  grafico("cITipo",{type:"bar",data:{labels:crit.map(c=>c[0]),datasets:[{label:"Acuracidade",data:vc,backgroundColor:vc.map(corPct),borderRadius:6,maxBarThickness:70}]},
+    options:{layout:{padding:{top:22}},plugins:{legend:{display:false},rotulos:{sufixo:"%",decimal:true},tooltip:{callbacks:{label:c=>{ const k=crit[c.dataIndex][1]; const v=rows.filter(r=>r[k]!==null); return " "+fmt1.format(c.raw)+"% · "+fmt.format(v.filter(r=>r[k]===0).length)+" erradas de "+fmt.format(v.length); }}}},
+      scales:{y:{beginAtZero:true,max:100,grid:{color:css("--grid")},ticks:{callback:v=>v+"%"}},x:{grid:{display:false}}}}});
+  const CORC = ["#7FB3F5","#A78BFA","#F59E0B","#2E9E6B"];
+  grafico("cITipoDia",{type:"line",data:{labels:dv.map(dataInvBR),datasets:crit.map(([n,k],i)=>({label:n,data:dv.map(d=>pc(doDia(d),k)),borderColor:CORC[i],backgroundColor:CORC[i],tension:.25,pointRadius:3,borderWidth:k==="aP"?3:2}))},
+    options:{plugins:{legend:{position:"bottom"},rotulos:{desligar:true},tooltip:{mode:"index",intersect:false,callbacks:{label:c=>` ${c.dataset.label}: ${fmt1.format(c.raw)}%`}}},
+      scales:{y:{suggestedMin:80,max:100,grid:{color:css("--grid")},ticks:{callback:v=>v+"%"}},x:{grid:{display:false}}}}});
+  const ar = ruas.map(u=>r1(pctI(daRua(u))));
+  grafico("cIRuaAcur",{type:"bar",data:{labels:ruas.map(u=>"Rua "+u),datasets:[{label:"Acuracidade",data:ar,backgroundColor:ar.map(corPct),borderRadius:6,maxBarThickness:60}]},
+    options:{layout:{padding:{top:22}},plugins:{legend:{display:false},rotulos:{sufixo:"%",decimal:true},tooltip:{callbacks:{label:c=>" "+fmt1.format(c.raw)+"% · "+fmt.format(daRua(ruas[c.dataIndex]).length)+" posições"}}},
+      scales:{y:{beginAtZero:true,max:100,grid:{color:css("--grid")},ticks:{callback:v=>v+"%"}},x:{grid:{display:false}}}}});
+
+  // divergências
+  const divs = rows.filter(r=>r.aP!==1);
+  const porSku = new Map(); divs.forEach(r=>{ const k=skuDe(r); if(k) porSku.set(k,(porSku.get(k)||0)+1); });
+  const ts = [...porSku.entries()].sort((a,b)=>b[1]-a[1]).slice(0,15);
+  grafico("cIDivSku",{type:"bar",data:{labels:ts.map(p=>p[0]),datasets:[{label:"Divergências",data:ts.map(p=>p[1]),backgroundColor:"#EF4444",borderRadius:4}]},
+    options:{indexAxis:"y",layout:{padding:{right:36}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{ const k=ts[c.dataIndex][0]; const tot=rows.filter(r=>skuDe(r)===k).length; return ` ${c.raw} divergências em ${tot} contagens`; }}}},
+      scales:{x:{beginAtZero:true,grid:{color:css("--grid")},ticks:{precision:0}},y:{grid:{display:false},ticks:{autoSkip:false}}}}});
+  const rd = ruas.map(u=>[u, daRua(u).filter(r=>r.aP!==1).length, daRua(u).length]).sort((a,b)=>b[1]-a[1]);
+  grafico("cIDivRua",{type:"bar",data:{labels:rd.map(p=>"Rua "+p[0]),datasets:[{label:"Divergências",data:rd.map(p=>p[1]),backgroundColor:"#EF4444",borderRadius:4}]},
+    options:{indexAxis:"y",layout:{padding:{right:36}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{ const p=rd[c.dataIndex]; return ` ${p[1]} de ${p[2]} posições (${fmt1.format(p[2]?p[1]/p[2]*100:0)}%)`; }}}},
+      scales:{x:{beginAtZero:true,grid:{color:css("--grid")},ticks:{precision:0}},y:{grid:{display:false},ticks:{autoSkip:false}}}}});
+  const tipos = ["SKU","Lote","Quantidade","Posição"];
+  const nt = tipos.map(t=>divs.filter(r=>errosDe(r).includes(t)).length);
+  grafico("cIDivTipo",{type:"bar",data:{labels:["SKU errado","Lote errado","Quantidade errada","Outro (só posição)"],datasets:[{label:"Posições",data:nt,backgroundColor:["#7FB3F5","#A78BFA","#F59E0B","#94A3B8"],borderRadius:6,maxBarThickness:70}]},
+    options:{layout:{padding:{top:22}},plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:css("--grid")},ticks:{precision:0}},x:{grid:{display:false}}}}});
+
+  // tabela
+  const esc = (v) => String(v??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  const ord = [...rows].sort((a,b)=> (a.aP-b.aP) || b.data.localeCompare(a.data));
+  $("iTabInfo").textContent = ord.length > 500 ? `mostrando 500 de ${fmt.format(ord.length)} (divergentes primeiro; o CSV traz todas)` : `${fmt.format(ord.length)} contagens`;
+  const cel = (v,erro) => `<td${erro?' style="color:var(--verm-txt);font-weight:600"':''}>${esc(v)||"—"}</td>`;
+  $("tbodyI").innerHTML = ord.slice(0,500).map(r=>`<tr><td><span class="badge ${r.aP===1?"b-ok":"b-ruim"}">${r.aP===1?"Certa":"Divergente"}</span></td><td>${dataBR(r.data)}</td><td>${esc(r.pos)}</td><td>${esc(r.rua)}</td>${cel(r.prod,r.aS===0)}${cel(r.skuT,r.aS===0)}${cel(r.lote,r.aB===0)}${cel(r.loteT,r.aB===0)}<td class="n"${r.aQ===0?' style="color:var(--verm-txt);font-weight:600"':''}>${fmt.format(r.qtd)}</td><td class="n"${r.aQ===0?' style="color:var(--verm-txt);font-weight:600"':''}>${r.qtdT===null?"—":fmt.format(r.qtdT)}</td><td>${errosDe(r).join(", ")||"—"}</td></tr>`).join("");
+  window._linhasI = ord;
+}
+function baixarCSVInv(){
+  const cab=["Data","Posição","Rua","SKU contado","SKU sistema","Lote contado","Lote sistema","Qtd contada","Qtd sistema","ACUR. SKU","ACUR. BATCH","ACUR. QTD","ACUR. POS.","Situação","Erro em","Contador","contagemID"];
+  const q=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const lin=(window._linhasI||[]).map(r=>[dataBR(r.data),r.pos,r.rua,r.prod,r.skuT,r.lote,r.loteT,r.qtd,r.qtdT??"",r.aS??"",r.aB??"",r.aQ??"",r.aP,r.aP===1?"Certa":"Divergente",errosDe(r).join(" | "),r.contador,r.id].map(q).join(";"));
+  const blob=new Blob(["﻿"+[cab.map(q).join(";"),...lin].join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="inventario_filtrado.csv"; a.click();
+}
+
 function baixarCSVRec(){
   const cab=["Chegada","ORDER ID","Nota fiscal","Fornecedor","Emissão","Envio XML","Registro","Internalizada","Volumes","Status","Responsável","PO","Tempo (dias)","Pendências"];
   const q=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;
@@ -872,10 +1032,10 @@ async function carregar(forcar){
     const j = await r.json();
     if (r.status===401 || r.status===403) { sairLocal(); iniciarLogin(j.erro); $("info").textContent = ""; return; }
     if (!r.ok || j.erro) throw new Error(j.erro || ("HTTP "+r.status));
-    DADOS = j.registros; DADOS_REC = j.recebimentos || []; ERRO_REC = j.erroReceb || null;
+    DADOS = j.registros; DADOS_REC = j.recebimentos || []; ERRO_REC = j.erroReceb || null; DADOS_INV = j.inventario || []; ERRO_INV = j.erroInv || null;
     if (!DADOS.length) throw new Error("A planilha não retornou registros.");
     $("conteudo").style.display = "none"; $("paginas").style.display = "block";
-    montarFiltros(); if (DADOS_REC.length) montarFiltrosRec(); render(); renderRec(); primeira = false;
+    montarFiltros(); if (DADOS_REC.length) montarFiltrosRec(); if (DADOS_INV.length) montarFiltrosInv(); render(); renderRec(); renderInv(); primeira = false;
     const d = new Date(j.atualizadoEm);
     $("info").textContent = d.toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
   }catch(e){
@@ -886,6 +1046,7 @@ async function carregar(forcar){
 
 const TITULOS = {geral:["Devoluções","Registros do AppSheet · visão geral do período"], motivos:["Motivos","Por que os produtos voltaram e para onde foram"],
   produtos:["Produtos","SKUs e famílias com mais devoluções"], operacao:["Operação","Produtividade da equipe e tempo de internalização"], dsla:["Prazo de internalização (SLA)","Até 23:59 do 2º dia útil depois do envio do XML (D+2 úteis · sábado e domingo não contam)"], registros:["Registros","Lista completa com exportação para CSV"],
+  igeral:["Inventário","Contagens de posições · visão geral do período"], iacur:["Acuracidade","Acerto por critério (SKU, lote, quantidade e posição), por dia e por rua"], idiv:["Divergências","Itens, ruas e tipos de erro com mais divergências"], ireg:["Contagens","Cada posição contada, com o que foi encontrado e o que o sistema esperava"],
   rgeral:["Recebimento","Notas recebidas no armazém · visão geral do período"], rforn:["Fornecedores","Volumes, notas e tempo por fornecedor"],
   rtempo:["Tempos de recebimento","Quanto tempo cada etapa leva, da emissão à internalização"], rsla:["Prazo de internalização (SLA)","24 horas úteis a partir da chegada · 10 h por dia útil (seg a sex, 08:00 às 18:00)"], rpend:["Pendências","Notas que ainda precisam de ação"], rreg:["Recebimentos","Lista completa com exportação para CSV"]};
 function ativarSecao(sec){
@@ -895,6 +1056,7 @@ function ativarSecao(sec){
   const atual = document.querySelector(`nav[data-sec="${sec}"] button.on`) || document.querySelector(`nav[data-sec="${sec}"] button`);
   atual.click();
   if (sec==="rec") renderRec();
+  if (sec==="inv") renderInv();
 }
 document.querySelectorAll(".secoes button").forEach(b=>b.onclick=()=>ativarSecao(b.dataset.s));
 function menu(abrir){ if(abrir) $("side").scrollTop = 0; $("side").classList.toggle("aberto",abrir); $("veu").classList.toggle("on",abrir); }
@@ -908,7 +1070,10 @@ document.querySelectorAll("nav button[data-p]").forEach(b => b.onclick = () => {
 });
 ["fIni","fFim","fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id => $(id).onchange = render);
 ["gIni","gFim","gForn","gStatus","gResp"].forEach(id => $(id).onchange = renderRec);
+["iIni","iFim","iRua","iSit","iCont"].forEach(id => $(id).onchange = renderInv);
+$("csvI").onclick = baixarCSVInv;
 $("limpar").onclick = () => {
+  if (SECAO==="inv"){ ["iIni","iFim","iRua","iSit","iCont"].forEach(id=>$(id).value=""); montarFiltrosInv(); renderInv(); return; }
   if (SECAO==="rec"){ ["gIni","gFim","gForn","gStatus","gResp"].forEach(id=>$(id).value=""); montarFiltrosRec(); renderRec(); return; }
   ["fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id=>$(id).value=""); $("fIni").value=""; $("fFim").value=""; montarFiltros(); render(); };
 $("csvR").onclick = baixarCSVRec;
@@ -922,7 +1087,7 @@ function temaEscuro(){ const t = document.documentElement.dataset.theme; return 
 function aplicarTema(){
   $("tema").textContent = temaEscuro() ? "☀️" : "🌙";
   Chart.defaults.color = css("--sub"); Chart.defaults.borderColor = css("--grid");
-  lerCores(); if (DADOS.length) { render(); renderRec(); }
+  lerCores(); if (DADOS.length) { render(); renderRec(); renderInv(); }
 }
 $("tema").onclick = () => {
   const novo = temaEscuro() ? "light" : "dark"; document.documentElement.dataset.theme = novo;
