@@ -125,6 +125,7 @@ export function converter(valores) {
     retrab: idx("Retrabalho estoque saudável"),
     descarte: idx("Motivo descarte"),
     internal: idx("DATA INTERNALIZADA"),
+    xml: idx("ENVIO DO XML") >= 0 ? idx("ENVIO DO XML") : idx("DateXML"),
     motivo: idx("Motivo Devolução"),
     razao: idx("Razão"),
   };
@@ -143,6 +144,7 @@ export function converter(valores) {
       id,
       chegada,
       internalizada: data(g(lin, "internal")),
+      xml: data(g(lin, "xml")),
       nfe: texto(g(lin, "nfe")).replace(/\.0+$/, ""),
       qtd: numero(g(lin, "qtd")),
       item,
