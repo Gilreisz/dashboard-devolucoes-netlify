@@ -302,8 +302,8 @@
         </div>
         <div class="grid">
           <div class="card full"><div class="barra"><h3>Data de chegada × internalização (SLA 24 h úteis)</h3><span class="info2" id="slaDiaInfo"></span></div>
-            <div class="sub">Cada barra é uma nota: tempo em horas úteis da chegada até a internalização, agrupado por data de chegada. Linha vermelha = prazo de 24 h úteis. Contorno vermelho = fora do prazo · barra clara = ainda em aberto.</div>
-            <div class="rolagem"><div class="ch" id="slaDiaLarg"><canvas id="cSlaDia"></canvas></div></div></div>
+            <div class="sub">Cada barra é uma nota internalizada, com o tempo em horas úteis da chegada até a internalização. Linha vermelha = prazo de 24 h úteis.</div>
+            <div class="ch"><canvas id="cSlaDia"></canvas></div></div>
           <div class="card"><h3>% internalizado no prazo por mês</h3><div class="sub">Notas internalizadas em até 24 horas úteis.</div><div class="ch"><canvas id="cSlaMes"></canvas></div></div>
           <div class="card"><h3>Tempo útil até a internalização</h3><div class="sub">Notas por faixa de horas úteis (10 h = 1 dia útil).</div><div class="ch"><canvas id="cSlaDist"></canvas></div></div>
           <div class="card full">
@@ -365,7 +365,7 @@ const Rotulos = { id:"rotulos", afterDatasetsDraw(chart){
       }
       if (tipo === "line") { ctx.font = "500 11px Roboto, Arial, sans-serif"; ctx.fillStyle = css("--txt"); ctx.fillText(fmt1.format(v), el.x, el.y - 13); return; }
       const suf = (chart.options.plugins.rotulos && chart.options.plugins.rotulos.sufixo) || "";
-      const txt = ((chart.options.plugins.rotulos && chart.options.plugins.rotulos.decimal) ? fmt1 : fmt).format(v) + suf; ctx.font = "600 11px Roboto, Arial, sans-serif";
+      const ro = chart.options.plugins.rotulos || {}; const txt = (ro.decimal ? fmt1.format(v) : ro.inteiro ? fmt.format(Math.round(v)) : fmt.format(v)) + suf; ctx.font = "600 11px Roboto, Arial, sans-serif";
       const larg = ctx.measureText(txt).width;
       if (empilhado) {
         const tam = horiz ? Math.abs(el.x - el.base) : Math.abs(el.base - el.y);
@@ -662,38 +662,32 @@ function renderSla(rows){
   const med = mediana(intern.map(x=>x.horas));
   $("sMed").innerHTML = med===null ? "–" : fmt1.format(med) + "<small> h</small>";
 
-  // Gráfico: cada nota recebida, agrupada por data de chegada
+  // Gráfico: cada nota internalizada, agrupada por data de chegada, cor por fornecedor
   const curtoForn = (f) => (f.split(/\s+/)[0] || f);
-  const todosDias = [...new Set(info.map(x=>x.r.chegada.slice(0,10)))].sort();
-  const diasV = todosDias.slice(-15);
-  let notas = info.filter(x=>diasV.includes(x.r.chegada.slice(0,10))).sort((p,q)=>p.r.chegada.localeCompare(q.r.chegada));
-  const cortou = notas.length > 80; if (cortou) notas = notas.slice(-80);
-  $("slaDiaInfo").textContent = fmt.format(notas.length) + " notas" + (todosDias.length > 15 || cortou ? " · últimos " + new Set(notas.map(x=>x.r.chegada.slice(0,10))).size + " dias com chegada" : "");
-  const forns = [...new Set(notas.map(x=>curtoForn(x.r.fornecedor)))]
-    .sort((p,q)=>notas.filter(x=>curtoForn(x.r.fornecedor)===q).length - notas.filter(x=>curtoForn(x.r.fornecedor)===p).length);
+  const dias = [...new Set(intern.map(x=>x.r.chegada.slice(0,10)))].sort();
+  const diasV = dias.slice(-20);
+  $("slaDiaInfo").textContent = dias.length > 20 ? "últimas 20 datas com chegada no período" : "";
+  const porDia = diasV.map(d=>intern.filter(x=>x.r.chegada.slice(0,10)===d).sort((p,q)=>p.r.fornecedor.localeCompare(q.r.fornecedor)||p.r.chegada.localeCompare(q.r.chegada)));
+  const vis = porDia.flat();
+  const forns = [...new Set(vis.map(x=>curtoForn(x.r.fornecedor)))]
+    .sort((p,q)=>vis.filter(x=>curtoForn(x.r.fornecedor)===q).length - vis.filter(x=>curtoForn(x.r.fornecedor)===p).length);
   const PAL = ["#5B6BC0","#7FB3F5","#9C8B5A","#14B8A6","#2E9E6B","#A78BFA","#F59E0B","#94A3B8"];
   const corF = (f) => PAL[forns.indexOf(f) % PAL.length];
-  const diaRot = (d) => d.slice(8,10)+"/"+d.slice(5,7);
-  const rot = notas.map((x,i)=>{ const d=x.r.chegada.slice(0,10); const novo = i===0 || notas[i-1].r.chegada.slice(0,10)!==d;
-    return ["NF " + (x.r.nf || x.r.id), novo ? diaRot(d) : ""]; });
-  $("slaDiaLarg").style.minWidth = Math.max(notas.length * 46, 300) + "px";
-  const SepDias = { id:"sepDias", beforeDatasetsDraw(ch){ const xs=ch.scales.x, ya=ch.chartArea, c=ch.ctx; c.save(); c.strokeStyle=css("--line"); c.setLineDash([4,4]);
-    notas.forEach((x,i)=>{ if(i && notas[i-1].r.chegada.slice(0,10)!==x.r.chegada.slice(0,10)){ const px=(xs.getPixelForValue(i-1)+xs.getPixelForValue(i))/2; c.beginPath(); c.moveTo(px,ya.top); c.lineTo(px,ya.bottom); c.stroke(); } });
-    c.restore(); } };
-  grafico("cSlaDia",{type:"bar",plugins:[SepDias],data:{labels:rot,
-      datasets:forns.map(f=>({label:f,skipNull:true,borderRadius:3,maxBarThickness:30,
-        data:notas.map(x=>curtoForn(x.r.fornecedor)===f ? r1(x.horas) : null),
-        backgroundColor:notas.map(x=>x.r.internalizada ? corF(f) : corF(f)+"66"),
-        borderColor:"#EF4444",
-        borderWidth:notas.map(x=>(x.sit==="fora"||x.sit==="atr")?2:0)}))},
-    options:{layout:{padding:{top:22}},datasets:{bar:{grouped:false}},
-      plugins:{legend:{position:"bottom"},rotulos:{sufixo:"h",decimal:true},linhaMeta:{valor:SLA_HORAS,texto:"SLA "+SLA_HORAS+"h",cor:"#EF4444"},
-        tooltip:{callbacks:{title:c=>{ const x=notas[c[0].dataIndex]; return "NF " + (x.r.nf||"—") + " · " + x.r.fornecedor; },
-          label:c=>{ if(c.raw===null) return null; const x=notas[c.dataIndex];
-            return [" Chegada: " + dataBR(x.r.chegada), " Internalizada: " + (dataBR(x.r.internalizada) || "em aberto"),
-              " " + fmt1.format(c.raw) + " h úteis" + (x.r.internalizada ? "" : " até agora"), " " + SIT[x.sit][0]]; }}}},
-      scales:{y:{beginAtZero:true,suggestedMax:SLA_HORAS+5,grid:{color:css("--grid")},ticks:{callback:v=>v+"h"}},
-        x:{grid:{display:false},ticks:{autoSkip:false,maxRotation:0,font:{size:11}}}}}});
+  const maxN = Math.max(0, ...porDia.map(g=>g.length));
+  const slots = Array.from({length:maxN},(_,j)=>({
+    label:"n"+j, skipNull:true, borderRadius:3, maxBarThickness:22,
+    notas: porDia.map(g=>g[j]||null),
+    data: porDia.map(g=>g[j] ? r1(g[j].horas) : null),
+    backgroundColor: porDia.map(g=>g[j] ? corF(curtoForn(g[j].r.fornecedor)) : "transparent")}));
+  grafico("cSlaDia",{type:"bar",data:{labels:diasV.map(d=>d.slice(8,10)+"/"+d.slice(5,7)),datasets:slots},
+    options:{layout:{padding:{top:22}},
+      plugins:{legend:{position:"bottom",onClick:()=>{},labels:{generateLabels:()=>forns.map(f=>({text:f,fillStyle:corF(f),strokeStyle:corF(f),lineWidth:0,fontColor:css("--sub")}))}},
+        rotulos:{sufixo:"h",inteiro:true},linhaMeta:{valor:SLA_HORAS,texto:"SLA "+SLA_HORAS+"h",cor:"#EF4444"},
+        tooltip:{callbacks:{title:c=>{ const x=c[0].dataset.notas[c[0].dataIndex]; return x ? x.r.fornecedor : ""; },
+          label:c=>{ const x=c.dataset.notas[c.dataIndex]; if(!x) return null;
+            return [" NF " + (x.r.nf||"—"), " Chegada: " + dataBR(x.r.chegada), " Internalizada: " + dataBR(x.r.internalizada),
+              " " + fmt1.format(x.horas) + " h úteis · " + SIT[x.sit][0]]; }}}},
+      scales:{y:{beginAtZero:true,suggestedMax:SLA_HORAS+5,grid:{color:css("--grid")},ticks:{callback:v=>v+"h"}},x:{grid:{display:false}}}}});
 
   const meses = [...new Set(intern.map(x=>mesChave(x.r.chegada)))].sort();
   const pct = meses.map(m => { const a = intern.filter(x=>mesChave(x.r.chegada)===m); return a.length ? r1(a.filter(x=>x.sit==="ok").length/a.length*100) : null; });
