@@ -953,18 +953,19 @@ function renderInv(){
   const dv = dias.slice(-30);
   $("iDiaInfo").textContent = dias.length > 30 ? "últimos 30 dias com contagem" : "";
   const doDia = (d) => rows.filter(r=>r.data.slice(0,10)===d);
+  const ruasDia = (d) => { const u=[...new Set(doDia(d).map(r=>r.rua))].sort(); return u.length ? (u.length>1?"Ruas ":"Rua ") + u.join(", ") : ""; };
   grafico("cIDia",{type:"bar",data:{labels:dv.map(dataInvBR),datasets:[
       {label:"Certas",data:dv.map(d=>doDia(d).filter(r=>r.aP===1).length),backgroundColor:css("--saud"),borderRadius:2},
       {label:"Divergentes",data:dv.map(d=>doDia(d).filter(r=>r.aP!==1).length),backgroundColor:"#EF4444",borderRadius:2}]},
-    options:{plugins:{legend:{position:"bottom"},tooltip:{mode:"index",callbacks:{footer:c=>{ const t=c.reduce((s,x)=>s+x.raw,0); return "Total: "+fmt.format(t)+" posições"; }}}},
+    options:{plugins:{legend:{position:"bottom"},tooltip:{mode:"index",callbacks:{footer:c=>{ const t=c.reduce((s,x)=>s+x.raw,0); return [ruasDia(dv[c[0].dataIndex]), "Total: "+fmt.format(t)+" posições"]; }}}},
       scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:css("--grid")}}}}});
   const accDia = dv.map(d=>r1(pctI(doDia(d))));
   const minAcc = Math.min(...accDia.filter(v=>v!==null), 100);
   grafico("cIAcurDia",{type:"line",data:{labels:dv.map(dataInvBR),datasets:[{label:"Acuracidade",data:accDia,borderColor:css("--marca2"),backgroundColor:css("--marca2")+"22",fill:true,tension:.25,pointRadius:4,pointBackgroundColor:accDia.map(corPct)}]},
-    options:{layout:{padding:{top:18}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+fmt1.format(c.raw)+"% certas · "+fmt.format(doDia(dv[c.dataIndex]).length)+" posições"}}},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>[" "+ruasDia(dv[c.dataIndex]), " "+fmt1.format(c.raw)+"% certas · "+fmt.format(doDia(dv[c.dataIndex]).length)+" posições"]}}},
       scales:{y:{suggestedMin:Math.max(0,Math.floor(minAcc/5)*5-5),max:100,grid:{color:css("--grid")},ticks:{callback:v=>v+"%"}},x:{grid:{display:false}}}}});
   grafico("cISkuDia",{type:"bar",data:{labels:dv.map(dataInvBR),datasets:[{label:"SKUs contados",data:dv.map(d=>doDia(d).filter(r=>r.prod).length),backgroundColor:css("--marca2"),borderRadius:4}]},
-    options:{layout:{padding:{top:18}},plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:css("--grid")}},x:{grid:{display:false}}}}});
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>[" "+ruasDia(dv[c.dataIndex]), " "+fmt.format(c.raw)+" SKUs contados"]}}},scales:{y:{beginAtZero:true,grid:{color:css("--grid")}},x:{grid:{display:false}}}}});
   const ruas = [...new Set(rows.map(r=>r.rua))].sort();
   const daRua = (u) => rows.filter(r=>r.rua===u);
   grafico("cIRuaPos",{type:"bar",data:{labels:ruas.map(u=>"Rua "+u),datasets:[{label:"Posições",data:ruas.map(u=>daRua(u).length),backgroundColor:css("--marca2"),borderRadius:4}]},
@@ -979,7 +980,7 @@ function renderInv(){
       scales:{y:{beginAtZero:true,max:100,grid:{color:css("--grid")},ticks:{callback:v=>v+"%"}},x:{grid:{display:false}}}}});
   const CORC = ["#7FB3F5","#A78BFA","#F59E0B","#2E9E6B"];
   grafico("cITipoDia",{type:"line",data:{labels:dv.map(dataInvBR),datasets:crit.map(([n,k],i)=>({label:n,data:dv.map(d=>pc(doDia(d),k)),borderColor:CORC[i],backgroundColor:CORC[i],tension:.25,pointRadius:3,borderWidth:k==="aP"?3:2}))},
-    options:{plugins:{legend:{position:"bottom"},rotulos:{desligar:true},tooltip:{mode:"index",intersect:false,callbacks:{label:c=>` ${c.dataset.label}: ${fmt1.format(c.raw)}%`}}},
+    options:{plugins:{legend:{position:"bottom"},rotulos:{desligar:true},tooltip:{mode:"index",intersect:false,callbacks:{title:c=>c[0].label+" · "+ruasDia(dv[c[0].dataIndex]),label:c=>` ${c.dataset.label}: ${fmt1.format(c.raw)}%`}}},
       scales:{y:{suggestedMin:80,max:100,grid:{color:css("--grid")},ticks:{callback:v=>v+"%"}},x:{grid:{display:false}}}}});
   const ar = ruas.map(u=>r1(pctI(daRua(u))));
   grafico("cIRuaAcur",{type:"bar",data:{labels:ruas.map(u=>"Rua "+u),datasets:[{label:"Acuracidade",data:ar,backgroundColor:ar.map(corPct),borderRadius:6,maxBarThickness:60}]},
