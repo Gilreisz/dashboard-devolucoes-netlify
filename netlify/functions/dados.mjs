@@ -4,9 +4,58 @@
 //   SHEET_ID                     -> ID ou link completo da planilha
 //   SHEET_TAB                    -> aba das devoluções (padrão: Página1)
 //   SHEET_TAB_RECEB              -> aba dos recebimentos (padrão: Recebimento)
+//   GOOGLE_CLIENT_ID             -> ID do cliente OAuth (login com Google)
+//   ALLOWED_DOMAIN               -> domínio liberado (padrão: zeb.mx; aceita vários separados por vírgula)
 import crypto from "node:crypto";
 
-const CACHE_SEGUNDOS = 15 * 60; // a CDN do Netlify guarda a resposta por 15 min
+const CACHE_SEGUNDOS = 15 * 60; // os dados da planilha ficam guardados por 15 min
+let CACHE = { t: 0, corpo: null };
+
+class ErroHttp extends Error { constructor(status, msg) { super(msg); this.status = status; } }
+
+// ---------- Login: confere o token do Google e o domínio do e-mail ----------
+let CERTS = { exp: 0, keys: {} };
+async function chavesGoogle(forcar) {
+  if (!forcar && Date.now() < CERTS.exp) return CERTS.keys;
+  const r = await fetch("https://www.googleapis.com/oauth2/v3/certs");
+  if (!r.ok) throw new Error("Não consegui baixar as chaves do Google (" + r.status + ").");
+  const j = await r.json();
+  const keys = {};
+  for (const k of j.keys) keys[k.kid] = crypto.createPublicKey({ key: k, format: "jwk" });
+  const m = /max-age=(\d+)/.exec(r.headers.get("cache-control") || "");
+  CERTS = { exp: Date.now() + (m ? Number(m[1]) : 3600) * 1000, keys };
+  return keys;
+}
+
+export function dominiosPermitidos() {
+  return (process.env.ALLOWED_DOMAIN || "zeb.mx").split(",").map((d) => d.trim().toLowerCase().replace(/^@/, "")).filter(Boolean);
+}
+
+export async function verificarUsuario(req) {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId) throw new ErroHttp(500, "Configure GOOGLE_CLIENT_ID no Netlify.");
+  const dominios = dominiosPermitidos();
+  const tok = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  if (!tok) throw new ErroHttp(401, "Entre com seu e-mail @" + dominios[0] + ".");
+  const [h, p, sig] = tok.split(".");
+  if (!h || !p || !sig) throw new ErroHttp(401, "Login inválido. Entre novamente.");
+  let head, pay;
+  try { head = JSON.parse(Buffer.from(h, "base64url")); pay = JSON.parse(Buffer.from(p, "base64url")); }
+  catch { throw new ErroHttp(401, "Login inválido. Entre novamente."); }
+  let keys = await chavesGoogle(false);
+  if (!keys[head.kid]) keys = await chavesGoogle(true);
+  const key = keys[head.kid];
+  if (!key || head.alg !== "RS256") throw new ErroHttp(401, "Login inválido. Entre novamente.");
+  const ok = crypto.verify("RSA-SHA256", Buffer.from(h + "." + p), key, Buffer.from(sig, "base64url"));
+  if (!ok) throw new ErroHttp(401, "Login inválido. Entre novamente.");
+  if (pay.aud !== clientId) throw new ErroHttp(401, "Login de outro aplicativo. Entre novamente.");
+  if (!["accounts.google.com", "https://accounts.google.com"].includes(pay.iss)) throw new ErroHttp(401, "Login inválido. Entre novamente.");
+  if (!pay.exp || pay.exp * 1000 < Date.now()) throw new ErroHttp(401, "Sua sessão expirou. Entre novamente.");
+  const email = String(pay.email || "").toLowerCase();
+  if (!pay.email_verified || !dominios.some((d) => email.endsWith("@" + d)))
+    throw new ErroHttp(403, "Acesso permitido só para e-mails @" + dominios.join(", @") + ". Você entrou como " + (email || "conta sem e-mail") + ".");
+  return email;
+}
 
 const b64url = (buf) =>
   Buffer.from(buf).toString("base64").replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
@@ -153,8 +202,11 @@ async function lerAba(token, id, aba) {
   return (await r.json()).values || [];
 }
 
-export default async () => {
+export default async (req) => {
   try {
+    await verificarUsuario(req);
+    const forcar = new URL(req.url).searchParams.has("t");
+    if (!forcar && CACHE.corpo && Date.now() - CACHE.t < CACHE_SEGUNDOS * 1000) return resposta(CACHE.corpo);
     const sa = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || "{}");
     const bruto = process.env.SHEET_ID || "";
     const id = (bruto.match(/\/d\/([a-zA-Z0-9_-]+)/) || [null, bruto])[1];
@@ -171,19 +223,19 @@ export default async () => {
     } else erroReceb = String(rec.reason?.message || rec.reason);
 
     const corpo = JSON.stringify({ atualizadoEm: new Date().toISOString(), registros: converter(dev.value), recebimentos, erroReceb });
-    return new Response(corpo, {
-      headers: {
-        "content-type": "application/json; charset=utf-8",
-        "cache-control": "public, max-age=0, must-revalidate",
-        "netlify-cdn-cache-control": `public, durable, s-maxage=${CACHE_SEGUNDOS}, stale-while-revalidate=120`,
-      },
-    });
+    CACHE = { t: Date.now(), corpo };
+    return resposta(corpo);
   } catch (e) {
-    return new Response(JSON.stringify({ erro: String(e.message || e) }), {
-      status: 500,
+    return new Response(JSON.stringify({ erro: String(e.message || e), login: e.status === 401 || e.status === 403 }), {
+      status: e.status || 500,
       headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
     });
   }
 };
+
+// Nunca deixar a CDN guardar: os dados só saem para quem fez login
+function resposta(corpo) {
+  return new Response(corpo, { headers: { "content-type": "application/json; charset=utf-8", "cache-control": "private, no-store" } });
+}
 
 export const config = { path: "/api/dados" };
