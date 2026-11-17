@@ -301,8 +301,9 @@
           <div class="k"><div><div class="l">Tempo útil mediano</div><div class="v" id="sMed">–</div><div class="s">chegada → internalização</div></div></div>
         </div>
         <div class="grid">
-          <div class="card full"><div class="barra"><h3>Data de chegada × internalização (SLA 24 h úteis)</h3><span class="info2" id="slaDiaInfo"></span></div>
-            <div class="sub">Tempo médio em horas úteis, por data de chegada e fornecedor. Linha vermelha = prazo de 24 h úteis (10 h por dia útil).</div>
+          <div class="card full"><div class="barra"><h3>Data de chegada × internalização (SLA 24 h úteis)</h3><span class="info2" id="slaDiaInfo"></span><span class="sp"></span>
+              <div class="seg" id="slaModo"><button data-m="max" class="on">Maior tempo</button><button data-m="media">Média</button></div></div>
+            <div class="sub" id="slaDiaSub"></div>
             <div class="ch"><canvas id="cSlaDia"></canvas></div></div>
           <div class="card"><h3>% internalizado no prazo por mês</h3><div class="sub">Notas internalizadas em até 24 horas úteis.</div><div class="ch"><canvas id="cSlaMes"></canvas></div></div>
           <div class="card"><h3>Tempo útil até a internalização</h3><div class="sub">Notas por faixa de horas úteis (10 h = 1 dia útil).</div><div class="ch"><canvas id="cSlaDist"></canvas></div></div>
@@ -365,7 +366,7 @@ const Rotulos = { id:"rotulos", afterDatasetsDraw(chart){
       }
       if (tipo === "line") { ctx.font = "500 11px Roboto, Arial, sans-serif"; ctx.fillStyle = css("--txt"); ctx.fillText(fmt1.format(v), el.x, el.y - 13); return; }
       const suf = (chart.options.plugins.rotulos && chart.options.plugins.rotulos.sufixo) || "";
-      const txt = fmt.format(v) + suf; ctx.font = "600 11px Roboto, Arial, sans-serif";
+      const txt = ((chart.options.plugins.rotulos && chart.options.plugins.rotulos.decimal) ? fmt1 : fmt).format(v) + suf; ctx.font = "600 11px Roboto, Arial, sans-serif";
       const larg = ctx.measureText(txt).width;
       if (empilhado) {
         const tam = horiz ? Math.abs(el.x - el.base) : Math.abs(el.base - el.y);
@@ -647,7 +648,7 @@ function sla(r){
 }
 const SIT = { ok:["No prazo","b-ok"], fora:["Fora do prazo","b-ruim"], atr:["Em aberto · atrasada","b-alerta"], aberto:["Em aberto · no prazo","b-info"] };
 const fmtH = (h) => fmt1.format(h) + " h";
-let SLA_FILTRO = "";
+let SLA_FILTRO = "", SLA_MODO = "max";
 
 function renderSla(rows){
   const info = rows.map(r => Object.assign({r}, sla(r)));
@@ -669,13 +670,19 @@ function renderSla(rows){
   $("slaDiaInfo").textContent = dias.length > 20 ? "últimas 20 datas com chegada no período" : "";
   const forns = [...new Set(intern.filter(x=>diasV.includes(x.r.chegada.slice(0,10))).map(x=>curtoForn(x.r.fornecedor)))]
     .sort((a,b)=>intern.filter(x=>curtoForn(x.r.fornecedor)===b).length - intern.filter(x=>curtoForn(x.r.fornecedor)===a).length);
-  const PAL = ["#5B6BC0","#7FB3F5","#9C8B5A","#E05A55","#2E9E6B","#A78BFA","#F59E0B","#94A3B8"];
+  $("slaDiaSub").textContent = (SLA_MODO==="max" ? "Maior tempo em horas úteis (nota mais demorada)" : "Tempo médio em horas úteis") + ", por data de chegada e fornecedor. Linha vermelha = prazo de 24 h úteis (10 h por dia útil). Contorno vermelho = tem nota fora do prazo.";
+  const PAL = ["#5B6BC0","#7FB3F5","#9C8B5A","#14B8A6","#2E9E6B","#A78BFA","#F59E0B","#94A3B8"];
   grafico("cSlaDia",{type:"bar",data:{labels:diasV.map(d=>d.slice(8,10)+"/"+d.slice(5,7)),
       datasets:forns.map((f,i)=>({label:f,backgroundColor:PAL[i%PAL.length],borderRadius:3,maxBarThickness:22,skipNull:true,
-        data:diasV.map(d=>{ const a=intern.filter(x=>x.r.chegada.slice(0,10)===d && curtoForn(x.r.fornecedor)===f).map(x=>x.horas); return a.length? Math.round(a.reduce((s,v)=>s+v,0)/a.length) : null; })}))},
+        grupos:diasV.map(d=>intern.filter(x=>x.r.chegada.slice(0,10)===d && curtoForn(x.r.fornecedor)===f)),
+        data:diasV.map(d=>{ const a=intern.filter(x=>x.r.chegada.slice(0,10)===d && curtoForn(x.r.fornecedor)===f).map(x=>x.horas); if(!a.length) return null;
+          return SLA_MODO==="max" ? r1(Math.max(...a)) : r1(a.reduce((s,v)=>s+v,0)/a.length); }),
+        borderColor:"#EF4444",
+        borderWidth:diasV.map(d=>intern.some(x=>x.r.chegada.slice(0,10)===d && curtoForn(x.r.fornecedor)===f && x.sit==="fora")?2:0)}))},
     options:{layout:{padding:{top:22}},
-      plugins:{legend:{position:"bottom"},rotulos:{sufixo:"h"},linhaMeta:{valor:SLA_HORAS,texto:"SLA "+SLA_HORAS+"h",cor:"#EF4444"},
-        tooltip:{callbacks:{label:c=>c.raw===null?null:` ${c.dataset.label}: ${c.raw} h úteis (média)`}}},
+      plugins:{legend:{position:"bottom"},rotulos:{sufixo:"h",decimal:true},linhaMeta:{valor:SLA_HORAS,texto:"SLA "+SLA_HORAS+"h",cor:"#EF4444"},
+        tooltip:{callbacks:{label:c=>{ if(c.raw===null) return null; const g=c.dataset.grupos[c.dataIndex]; const nf=g.filter(x=>x.sit==="fora").length;
+          return [` ${c.dataset.label}: ${fmt1.format(c.raw)} h úteis (${SLA_MODO==="max"?"maior tempo":"média"})`, ` ${g.length} nota${g.length>1?"s":""}`+(nf?` · ${nf} fora do prazo`:" · todas no prazo")]; }}}},
       scales:{y:{beginAtZero:true,suggestedMax:SLA_HORAS+5,grid:{color:css("--grid")},ticks:{callback:v=>v+"h"}},x:{grid:{display:false}}}}});
 
   const meses = [...new Set(intern.map(x=>mesChave(x.r.chegada)))].sort();
@@ -759,6 +766,7 @@ $("limpar").onclick = () => {
   ["fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id=>$(id).value=""); $("fIni").value=""; $("fFim").value=""; montarFiltros(); render(); };
 $("csvR").onclick = baixarCSVRec;
 $("csvSla").onclick = baixarCSVSla;
+document.querySelectorAll("#slaModo button").forEach(b=>b.onclick=()=>{ SLA_MODO=b.dataset.m; document.querySelectorAll("#slaModo button").forEach(x=>x.classList.toggle("on",x===b)); renderSla(window._rowsRec||[]); });
 document.querySelectorAll("#slaSeg button").forEach(b=>b.onclick=()=>{ SLA_FILTRO=b.dataset.f; document.querySelectorAll("#slaSeg button").forEach(x=>x.classList.toggle("on",x===b)); renderSla(window._rowsRec||[]); });
 $("csv").onclick = baixarCSV;
 $("atualizar").onclick = () => carregar(true);
