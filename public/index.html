@@ -181,6 +181,7 @@
       <button data-p="motivos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/></svg>Motivos</button>
       <button data-p="produtos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg>Produtos</button>
       <button data-p="operacao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14a6 6 0 0 1 3.5 6"/></svg>Operação</button>
+      <button data-p="dsla"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6"/><path d="M12 14l3-3"/><circle cx="12" cy="14" r="8"/></svg>Prazo (SLA)</button>
       <button data-p="registros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Registros</button>
     </nav>
     <nav data-sec="rec" hidden>
@@ -285,6 +286,30 @@
         <div class="card"><h3>Registros por responsável</h3><div class="sub">Quantidade de registros lançados.</div><div class="ch alto"><canvas id="cResp"></canvas></div></div>
         <div class="card"><h3>Lead time mediano por mês</h3><div class="sub">Dias entre a chegada e a internalização.</div><div class="ch alto"><canvas id="cLead"></canvas></div></div>
       </div></section>
+
+      <section class="pag" id="p-dsla">
+        <div class="mini">
+          <div class="k ok"><div><div class="l">Internalizadas no prazo</div><div class="v" id="dOkPct" style="color:var(--verde-txt)">–</div><div class="s" id="dOk">–</div></div></div>
+          <div class="k ruim"><div><div class="l">Fora do prazo</div><div class="v" id="dFora" style="color:var(--verm-txt)">–</div><div class="s">internalizadas após 24 h úteis</div></div></div>
+          <div class="k alerta"><div><div class="l">Em aberto · atrasadas</div><div class="v" id="dAbAtr" style="color:var(--marca)">–</div><div class="s">já passaram do prazo</div></div></div>
+          <div class="k"><div><div class="l">Em aberto · no prazo</div><div class="v" id="dAbOk">–</div><div class="s" id="dVence">–</div></div></div>
+          <div class="k"><div><div class="l">Tempo útil mediano</div><div class="v" id="dMed">–</div><div class="s" id="dSemXml">envio do XML → internalização</div></div></div>
+        </div>
+        <div class="grid">
+          <div class="card full"><div class="barra"><h3>Envio do XML × internalização por dia (SLA 24 h úteis)</h3><span class="info2" id="dslaDiaInfo"></span></div>
+            <div class="sub">Devoluções internalizadas, pela data de envio do XML: quantas ficaram no prazo e quantas passaram de 24 h úteis.</div>
+            <div class="ch"><canvas id="cDSlaDia"></canvas></div></div>
+          <div class="card"><h3>% internalizado no prazo por mês</h3><div class="sub">Devoluções internalizadas em até 24 horas úteis após o envio do XML.</div><div class="ch"><canvas id="cDSlaMes"></canvas></div></div>
+          <div class="card"><h3>Fora do prazo por transportadora</h3><div class="sub">% das devoluções internalizadas que passaram de 24 h úteis.</div><div class="ch"><canvas id="cDSlaTransp"></canvas></div></div>
+          <div class="card full">
+            <div class="barra"><h3>Tempo de cada devolução</h3><span class="info2" id="dslaInfo"></span><span class="sp"></span>
+              <div class="seg" id="dslaSeg"><button data-f="" class="on">Todas</button><button data-f="fora">Fora do prazo</button><button data-f="atr">Em aberto atrasadas</button><button data-f="aberto">Em aberto no prazo</button><button data-f="ok">No prazo</button></div>
+              <button class="btn" id="csvDSla">⬇ CSV</button></div>
+            <div class="sub">Regra: contam só as horas de segunda a sexta, das 08:00 às 18:00. Prazo de 24 horas úteis (10 h por dia) a partir do envio do XML.</div>
+            <div class="tab"><table><thead><tr><th>Situação</th><th>Envio do XML</th><th>Prazo limite</th><th>Internalizada</th><th class="n">Horas úteis</th><th class="n">Dias úteis</th><th>ID</th><th>NFe</th><th>SKU</th><th>Transportadora</th></tr></thead><tbody id="tbodyD"></tbody></table></div>
+          </div>
+        </div>
+      </section>
 
       <section class="pag" id="p-registros"><div class="card" style="margin-top:16px">
         <div class="barra"><h3>Registros</h3><span class="info2" id="tabInfo"></span><span class="sp"></span><button class="btn" id="csv">⬇ Baixar CSV</button></div>
@@ -514,6 +539,7 @@ function render(){
   const esc = (s) => String(s??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
   $("tbody").innerHTML = ord.slice(0,LIM).map(r => { const l=lead(r); return `<tr><td>${dataBR(r.chegada)}</td><td>${esc(r.id)}</td><td>${esc(r.nfe)}</td><td>${esc(r.item)}</td><td>${esc(r.transportadora)}</td><td>${esc(r.destino)}</td><td>${esc(r.motivo)}</td><td>${esc(r.razao)}</td><td>${esc(r.responsavel)}</td><td>${dataBR(r.internalizada)}</td><td class="n">${fmt.format(r.qtd)}</td><td class="n">${l===null?"":fmt1.format(l)}</td></tr>`; }).join("");
   window._linhas = ord;
+  renderDSla(rows);
 }
 
 function contar(id, alvo, f){
@@ -655,11 +681,12 @@ function somarHorasUteis(a, h){
   return t;
 }
 const isoLocal = (d) => { const p=(n)=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`; };
-function sla(r){
+function sla(r, inicio){
+  inicio = inicio || r.chegada;
   const agora = new Date();
   const fim = r.internalizada ? new Date(r.internalizada) : agora;
-  const h = horasUteis(r.chegada, fim);
-  const limite = somarHorasUteis(r.chegada, SLA_HORAS);
+  const h = horasUteis(inicio, fim);
+  const limite = somarHorasUteis(inicio, SLA_HORAS);
   let sit;
   if (r.internalizada) sit = h <= SLA_HORAS ? "ok" : "fora";
   else sit = h <= SLA_HORAS ? "aberto" : "atr";
@@ -735,6 +762,63 @@ function baixarCSVSla(){
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="sla_recebimento.csv"; a.click();
 }
 
+// ---------- SLA das devoluções: envio do XML → internalização ----------
+let DSLA_FILTRO = "";
+function renderDSla(rows){
+  const comXml = rows.filter(r=>r.xml);
+  const info = comXml.map(r => Object.assign({r}, sla(r, r.xml)));
+  const cont = (k) => info.filter(x=>x.sit===k).length;
+  const intern = info.filter(x=>x.r.internalizada);
+  const ok = cont("ok"), fora = cont("fora");
+  $("dOkPct").innerHTML = intern.length ? fmt1.format(ok/intern.length*100) + "<small>%</small>" : "–";
+  $("dOk").textContent = fmt.format(ok) + " de " + fmt.format(intern.length) + " internalizadas";
+  $("dFora").textContent = fmt.format(fora); $("dAbAtr").textContent = fmt.format(cont("atr")); $("dAbOk").textContent = fmt.format(cont("aberto"));
+  const hoje = isoLocal(new Date()).slice(0,10);
+  $("dVence").textContent = fmt.format(info.filter(x=>x.sit==="aberto" && x.limite.slice(0,10)===hoje).length) + " vencem hoje";
+  const med = mediana(intern.map(x=>x.horas));
+  $("dMed").innerHTML = med===null ? "–" : fmt1.format(med) + "<small> h</small>";
+  const semXml = rows.length - comXml.length;
+  $("dSemXml").textContent = semXml ? fmt.format(semXml) + " registros sem envio do XML (fora da conta)" : "envio do XML → internalização";
+
+  // por dia do envio do XML: no prazo x fora do prazo
+  const dias = [...new Set(intern.map(x=>x.r.xml.slice(0,10)))].sort();
+  const dv = dias.slice(-30);
+  $("dslaDiaInfo").textContent = dias.length > 30 ? "últimos 30 dias com envio de XML no período" : "";
+  const nDia = (d,k) => intern.filter(x=>x.r.xml.slice(0,10)===d && x.sit===k).length;
+  grafico("cDSlaDia",{type:"bar",data:{labels:dv.map(d=>d.slice(8,10)+"/"+d.slice(5,7)),datasets:[
+      {label:"No prazo",data:dv.map(d=>nDia(d,"ok")),backgroundColor:css("--saud"),borderRadius:2},
+      {label:"Fora do prazo",data:dv.map(d=>nDia(d,"fora")),backgroundColor:"#EF4444",borderRadius:2}]},
+    options:{plugins:{legend:{position:"bottom"},tooltip:{mode:"index",callbacks:{footer:c=>{ const t=c.reduce((s,x)=>s+x.raw,0); const f=c.find(x=>x.dataset.label==="Fora do prazo"); return t ? "Fora do prazo: " + fmt1.format((f?f.raw:0)/t*100) + "%" : ""; }}}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:css("--grid")}}}}});
+
+  const meses = [...new Set(intern.map(x=>mesChave(x.r.xml)))].sort();
+  const pct = meses.map(m => { const a = intern.filter(x=>mesChave(x.r.xml)===m); return a.length ? r1(a.filter(x=>x.sit==="ok").length/a.length*100) : null; });
+  grafico("cDSlaMes",{type:"bar",data:{labels:meses.map(mesRot),datasets:[{label:"% no prazo",data:pct,borderRadius:6,
+      backgroundColor:pct.map(v=>v===null?css("--sem"):v>=95?css("--saud"):v>=85?css("--marca"):css("--desc"))}]},
+    options:{layout:{padding:{top:18}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>" "+fmt1.format(c.raw)+"% no prazo"}}},
+      scales:{y:{beginAtZero:true,max:100,grid:{color:css("--grid")},ticks:{callback:v=>v+"%"}},x:{grid:{display:false}}}}});
+
+  const tr = [...new Set(intern.map(x=>x.r.transportadora))].map(t=>{ const a=intern.filter(x=>x.r.transportadora===t); return [t, r1(a.filter(x=>x.sit==="fora").length/a.length*100), a.length]; })
+    .filter(p=>p[2]>=3).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  grafico("cDSlaTransp",{type:"bar",data:{labels:tr.map(p=>p[0]),datasets:[{label:"% fora do prazo",data:tr.map(p=>p[1]),backgroundColor:"#EF4444",borderRadius:4}]},
+    options:{indexAxis:"y",layout:{padding:{right:44}},plugins:{legend:{display:false},rotulos:{sufixo:"%"},tooltip:{callbacks:{label:c=>` ${fmt1.format(c.raw)}% fora do prazo · ${fmt.format(tr[c.dataIndex][2])} devoluções`}}},
+      scales:{x:{beginAtZero:true,suggestedMax:100,grid:{color:css("--grid")},ticks:{callback:v=>v+"%"}},y:{grid:{display:false},ticks:{autoSkip:false}}}}});
+
+  const esc = (v) => String(v??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  const ordem = {atr:0,fora:1,aberto:2,ok:3};
+  const lista = info.filter(x=>!DSLA_FILTRO || x.sit===DSLA_FILTRO).sort((a,b)=> DSLA_FILTRO ? b.r.xml.localeCompare(a.r.xml) : (ordem[a.sit]-ordem[b.sit]) || b.r.xml.localeCompare(a.r.xml));
+  $("dslaInfo").textContent = fmt.format(lista.length) + " registros" + (lista.length>500 ? " (mostrando 500; o CSV traz todos)" : "");
+  $("tbodyD").innerHTML = lista.slice(0,500).map(x=>`<tr><td><span class="badge ${SIT[x.sit][1]}">${SIT[x.sit][0]}</span></td><td>${dataBR(x.r.xml)}</td><td>${dataBR(x.limite)}</td><td>${dataBR(x.r.internalizada)||"—"}</td><td class="n">${fmtH(x.horas)}</td><td class="n">${fmt1.format(x.horas/10)}</td><td>${esc(x.r.id)}</td><td>${esc(x.r.nfe)}</td><td>${esc(x.r.item)}</td><td>${esc(x.r.transportadora)}</td></tr>`).join("");
+  window._linhasD = lista;
+}
+function baixarCSVDSla(){
+  const cab=["Envio do XML","ID","NFe","SKU","Transportadora","Prazo limite","Internalizada","Horas úteis","Dias úteis","Situação"];
+  const q=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const lin=(window._linhasD||[]).map(x=>[dataBR(x.r.xml),x.r.id,x.r.nfe,x.r.item,x.r.transportadora,dataBR(x.limite),dataBR(x.r.internalizada),fmt1.format(x.horas),fmt1.format(x.horas/10),SIT[x.sit][0]].map(q).join(";"));
+  const blob=new Blob(["﻿"+[cab.map(q).join(";"),...lin].join("\r\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="sla_devolucoes.csv"; a.click();
+}
+
 function baixarCSVRec(){
   const cab=["Chegada","ORDER ID","Nota fiscal","Fornecedor","Emissão","Envio XML","Registro","Internalizada","Volumes","Status","Responsável","PO","Tempo (dias)","Pendências"];
   const q=(v)=>`"${String(v??"").replace(/"/g,'""')}"`;
@@ -764,7 +848,7 @@ async function carregar(forcar){
 }
 
 const TITULOS = {geral:["Devoluções","Registros do AppSheet · visão geral do período"], motivos:["Motivos","Por que os produtos voltaram e para onde foram"],
-  produtos:["Produtos","SKUs e famílias com mais devoluções"], operacao:["Operação","Produtividade da equipe e tempo de internalização"], registros:["Registros","Lista completa com exportação para CSV"],
+  produtos:["Produtos","SKUs e famílias com mais devoluções"], operacao:["Operação","Produtividade da equipe e tempo de internalização"], dsla:["Prazo de internalização (SLA)","24 horas úteis a partir do envio do XML · 10 h por dia útil (seg a sex, 08:00 às 18:00)"], registros:["Registros","Lista completa com exportação para CSV"],
   rgeral:["Recebimento","Notas recebidas no armazém · visão geral do período"], rforn:["Fornecedores","Volumes, notas e tempo por fornecedor"],
   rtempo:["Tempos de recebimento","Quanto tempo cada etapa leva, da emissão à internalização"], rsla:["Prazo de internalização (SLA)","24 horas úteis a partir da chegada · 10 h por dia útil (seg a sex, 08:00 às 18:00)"], rpend:["Pendências","Notas que ainda precisam de ação"], rreg:["Recebimentos","Lista completa com exportação para CSV"]};
 function ativarSecao(sec){
@@ -792,6 +876,8 @@ $("limpar").onclick = () => {
   ["fTransp","fDestino","fMotivo","fFamilia","fResp"].forEach(id=>$(id).value=""); $("fIni").value=""; $("fFim").value=""; montarFiltros(); render(); };
 $("csvR").onclick = baixarCSVRec;
 $("csvSla").onclick = baixarCSVSla;
+$("csvDSla").onclick = baixarCSVDSla;
+document.querySelectorAll("#dslaSeg button").forEach(b=>b.onclick=()=>{ DSLA_FILTRO=b.dataset.f; document.querySelectorAll("#dslaSeg button").forEach(x=>x.classList.toggle("on",x===b)); render(); });
 document.querySelectorAll("#slaSeg button").forEach(b=>b.onclick=()=>{ SLA_FILTRO=b.dataset.f; document.querySelectorAll("#slaSeg button").forEach(x=>x.classList.toggle("on",x===b)); renderSla(window._rowsRec||[]); });
 $("csv").onclick = baixarCSV;
 $("atualizar").onclick = () => carregar(true);
