@@ -4,6 +4,8 @@
 //   SHEET_ID                     -> ID ou link completo da planilha
 //   SHEET_TAB                    -> aba das devoluções (padrão: Página1)
 //   SHEET_TAB_RECEB              -> aba dos recebimentos (padrão: Recebimento)
+//   SHEET_ID_INV                 -> ID ou link da planilha de inventário
+//   SHEET_TAB_INV                -> aba do inventário (padrão: inventario_appSheet)
 //   GOOGLE_CLIENT_ID             -> ID do cliente OAuth (login com Google)
 //   ALLOWED_DOMAIN               -> domínio liberado (padrão: zeb.mx; aceita vários separados por vírgula)
 import crypto from "node:crypto";
@@ -195,6 +197,49 @@ export function converterReceb(valores) {
   return out;
 }
 
+// ---------- Inventário ----------
+const chaveCab = (c) => texto(c).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+function acerto(v) {               // "100%" / "0%" / 1 / 0  ->  1 ou 0 (null se vazio)
+  if (v === undefined || v === null || v === "") return null;
+  if (typeof v === "number") return v >= 0.5 ? 1 : 0;
+  const s = String(v).trim();
+  const n = parseFloat(s.replace(",", "."));
+  if (isNaN(n)) return null;
+  return (s.includes("%") ? n / 100 : n) >= 0.5 ? 1 : 0;
+}
+export function converterInv(valores) {
+  const cab = (valores[0] || []).map(chaveCab);
+  const idx = (...nomes) => { for (const n of nomes) { const i = cab.indexOf(chaveCab(n)); if (i >= 0) return i; } return -1; };
+  const col = {
+    id: idx("contagemID"), data: idx("dataContagem"), contador: idx("contador"), pos: idx("posicao", "posição"),
+    lote: idx("lote"), prod: idx("produtoID"), qtd: idx("quantidade"),
+    skuT: idx("SKU INV X TPL"), loteT: idx("BATCH INV X TPL"), qtdT: idx("QTD INV X TPL"),
+    aS: idx("ACUR. SKU"), aB: idx("ACUR. BATCH"), aQ: idx("ACUR. QTD"), aP: idx("ACUR. POS."),
+  };
+  if (col.data < 0 || col.pos < 0 || col.aP < 0)
+    throw new Error("Aba de inventário sem as colunas 'dataContagem', 'posicao' e 'ACUR. POS.'.");
+  const g = (lin, k) => (col[k] < 0 ? "" : lin[col[k]]);
+  const out = [];
+  for (const lin of valores.slice(1)) {
+    const data = dataInv(g(lin, "data"));
+    const pos = texto(g(lin, "pos")).toUpperCase();
+    if (!data || !pos) continue;
+    const partes = pos.split(".");
+    const rua = ((partes[1] || "").match(/^[A-Z]+/) || ["?"])[0];
+    const prod = texto(g(lin, "prod")).toUpperCase();
+    const skuT = texto(g(lin, "skuT")).toUpperCase();
+    out.push({
+      id: texto(g(lin, "id")), data, contador: texto(g(lin, "contador")), pos, rua,
+      lote: texto(g(lin, "lote")), prod, qtd: numero(g(lin, "qtd")),
+      skuT, loteT: texto(g(lin, "loteT")), qtdT: g(lin, "qtdT") === "" || g(lin, "qtdT") === undefined ? null : numero(g(lin, "qtdT")),
+      aS: acerto(g(lin, "aS")), aB: acerto(g(lin, "aB")), aQ: acerto(g(lin, "aQ")), aP: acerto(g(lin, "aP")) ?? 0,
+    });
+  }
+  return out;
+}
+// datas do inventário: serial do Sheets, "dd/mm/aaaa hh:mm:ss" ou ISO
+function dataInv(v) { return data(v); }
+
 async function lerAba(token, id, aba) {
   const url =
     `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(aba)}` +
@@ -216,15 +261,25 @@ export default async (req) => {
     if (!sa.private_key || !id) throw new Error("Configure GOOGLE_SERVICE_ACCOUNT_JSON e SHEET_ID no Netlify.");
 
     const abaReceb = process.env.SHEET_TAB_RECEB || "Recebimento";
+    const brutoInv = process.env.SHEET_ID_INV || "";
+    const idInv = (brutoInv.match(/\/d\/([a-zA-Z0-9_-]+)/) || [null, brutoInv])[1];
+    const abaInv = process.env.SHEET_TAB_INV || "inventario_appSheet";
     const token = await tokenGoogle(sa);
-    const [dev, rec] = await Promise.allSettled([lerAba(token, id, aba), lerAba(token, id, abaReceb)]);
+    const [dev, rec, inv] = await Promise.allSettled([
+      lerAba(token, id, aba), lerAba(token, id, abaReceb),
+      idInv ? lerAba(token, idInv, abaInv) : Promise.reject(new Error("Configure SHEET_ID_INV no Netlify (link da planilha de inventário).")),
+    ]);
     if (dev.status === "rejected") throw dev.reason;
     let recebimentos = [], erroReceb = null;
     if (rec.status === "fulfilled") {
       try { recebimentos = converterReceb(rec.value); } catch (e) { erroReceb = String(e.message || e); }
     } else erroReceb = String(rec.reason?.message || rec.reason);
+    let inventario = [], erroInv = null;
+    if (inv.status === "fulfilled") {
+      try { inventario = converterInv(inv.value); } catch (e) { erroInv = String(e.message || e); }
+    } else erroInv = String(inv.reason?.message || inv.reason);
 
-    const corpo = JSON.stringify({ atualizadoEm: new Date().toISOString(), registros: converter(dev.value), recebimentos, erroReceb });
+    const corpo = JSON.stringify({ atualizadoEm: new Date().toISOString(), registros: converter(dev.value), recebimentos, erroReceb, inventario, erroInv });
     CACHE = { t: Date.now(), corpo };
     return resposta(corpo);
   } catch (e) {
